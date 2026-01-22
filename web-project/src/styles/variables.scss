@@ -1,0 +1,15 @@
+$app-header-height: 80px;
+$app-aside-width: 180px;
+$app-aside-close-width: 80px;
+$app-tabs-height: 30px;
+$app-padding: 6px;
+
+
+// src/styles/scrollbar.scss（可导入到 variables.scss 中全局使用）
+// 定义滚动条变量（方便统一修改）
+$scrollbar-width: 6px;
+$scrollbar-track-color: #f5f5f5; // 轨道颜色
+$scrollbar-thumb-color: #dcdcdc; // 滑块默认颜色
+$scrollbar-thumb-hover-color: #bbb; // 滑块 hover 颜色
+$scrollbar-border-radius: 3px; // 圆角
+
