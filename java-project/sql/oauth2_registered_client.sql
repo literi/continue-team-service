@@ -1,0 +1,23 @@
+CREATE TABLE `oauth2_registered_client` (
+  `id` varchar(100) NOT NULL COMMENT '客户端ID（主键）',
+  `tenant_id` varchar(64) NOT NULL COMMENT '租户ID（关联sys_tenant.id）',
+  `client_id` varchar(100) NOT NULL COMMENT '客户端标识（租户内唯一）',
+  `client_id_issued_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '客户端ID颁发时间',
+  `client_secret` varchar(200) DEFAULT NULL COMMENT '客户端密钥（BCrypt加密）',
+  `client_secret_expires_at` timestamp NULL DEFAULT NULL COMMENT '客户端密钥过期时间',
+  `client_name` varchar(200) NOT NULL COMMENT '客户端名称',
+  `client_authentication_methods` varchar(1000) NOT NULL COMMENT '客户端认证方式（逗号分隔）',
+  `authorization_grant_types` varchar(1000) NOT NULL COMMENT '授权类型（逗号分隔）',
+  `redirect_uris` varchar(1000) DEFAULT NULL COMMENT '重定向URI（逗号分隔）',
+  `post_logout_redirect_uris` varchar(1000) DEFAULT NULL COMMENT '登出后重定向URI（逗号分隔）',
+  `scopes` varchar(1000) NOT NULL COMMENT '权限范围（逗号分隔）',
+  `client_settings` varchar(2000) NOT NULL COMMENT '客户端配置（JSON格式）',
+  `token_settings` varchar(2000) NOT NULL COMMENT '令牌配置（JSON格式）',
+  `status` tinyint(1) NOT NULL DEFAULT 1 COMMENT '状态：1-启用，0-禁用',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_tenant_client_id` (`tenant_id`,`client_id`),
+  KEY `idx_oauth_client_tenant` (`tenant_id`),
+  KEY `idx_oauth_client_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='OAuth2客户端表（扩展租户）';

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>后台管理</title>
+  <link rel="stylesheet" th:href="@{/css/home.css}" />
+  <script th:src="@{/js/htmx-1.9.10.min.js}"></script>
+</head>
+<body>
+  <div class="admin-container">
+    <!-- 侧边栏 -->
+    <th:block th:replace="~{fragments/layout/sidebar :: sidebar(${sidebarCollapsed})}"></th:block>
+
+    <div class="main-wrapper">
+      <!-- 顶栏 -->
+      <header th:replace="~{fragments/layout/header :: header(${loginUser})}"></header>
+
+      <!-- 主内容区：初始为仪表盘，HTMX 按需替换 -->
+      <main class="main-content">
+        <div id="contentContainer" class="content-inner">
+          <th:block th:replace="~{fragments/content/dashboard :: dashboard}"></th:block>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // 侧栏折叠：点击顶栏按钮切换，HTMX 可选或本地切换
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelector('.toggle-btn')?.addEventListener('click', function(e) {
+        var sidebar = document.querySelector('.sidebar');
+        if (sidebar) sidebar.classList.toggle('collapsed');
+      });
+    });
+  </script>
+</body>
+</html>

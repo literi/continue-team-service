@@ -1,0 +1,28 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="setting">
+    <div class="content-card">
+        <h2>系统设置</h2>
+        <p>配置系统名称、语言与缓存策略。</p>
+        <form class="form-actions">
+            <div class="form-group">
+                <label>系统名称</label>
+                <input type="text" value="后台管理系统" placeholder="请输入系统名称" />
+            </div>
+            <div class="form-group">
+                <label>默认语言</label>
+                <select>
+                    <option selected>简体中文</option>
+                    <option>English</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" checked />
+                    自动清理缓存（每天凌晨 2 点）
+                </label>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">保存设置</button>
+            </div>
+        </form>
+    </div>
+</th:block>

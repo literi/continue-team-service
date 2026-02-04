@@ -1,0 +1,166 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="userList">
+    <div class="content-card">
+        <h2>用户管理</h2>
+        <p>管理系统用户账号，密码字段不会在列表中显示。</p>
+        <button type="button" class="btn btn-primary" onclick="showAddModal()">新增用户</button>
+
+        <div id="userTableContainer">
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>用户名</th>
+                            <th>昵称</th>
+                            <th>手机号</th>
+                            <th>邮箱</th>
+                            <th>状态</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="user : ${pageResult.content}">
+                            <td th:text="${user.username}">-</td>
+                            <td th:text="${user.nickname ?: '-'}">-</td>
+                            <td th:text="${user.phone ?: '-'}">-</td>
+                            <td th:text="${user.email ?: '-'}">-</td>
+                            <td>
+                                <span th:if="${user.status}" style="color: #52c41a;">启用</span>
+                                <span th:unless="${user.status}" style="color: #ff4d4f;">禁用</span>
+                            </td>
+                            <td th:text="${#temporals.format(user.createTime, 'yyyy-MM-dd HH:mm')}">-</td>
+                            <td>
+                                <div class="actions">
+                                    <button type="button" class="btn btn-sm btn-edit" 
+                                            data-action="edit"
+                                            th:data-id="${user.id}">
+                                        编辑
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger btn-delete" 
+                                            data-action="delete"
+                                            th:data-id="${user.id}">
+                                        删除
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(pageResult.content)}">
+                            <td colspan="7" style="text-align: center; color: #999;">暂无数据</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页控件 -->
+            <div class="pagination" th:if="${pageResult.totalPages > 0}">
+                <button type="button" class="btn btn-sm btn-page" 
+                        th:disabled="${pageResult.isFirst}"
+                        data-action="page"
+                        th:data-page="${pageResult.currentPage - 1}">
+                    上一页
+                </button>
+                <span class="page-info">
+                    第 <span th:text="${pageResult.currentPage}">1</span> 页 / 共 <span th:text="${pageResult.totalPages}">1</span> 页
+                    （共 <span th:text="${pageResult.totalElements}">0</span> 条）
+                </span>
+                <button type="button" class="btn btn-sm btn-page" 
+                        th:disabled="${pageResult.isLast}"
+                        data-action="page"
+                        th:data-page="${pageResult.currentPage + 1}">
+                    下一页
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑/新增模态框 -->
+    <div id="userModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">新增用户</h3>
+                <button type="button" class="modal-close" onclick="closeUserModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="userFormContainer">
+                <!-- 表单将通过HTMX加载 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function loadUserPage(page) {
+            htmx.ajax('GET', '/admin/user/list?page=' + page, {
+                target: '#contentContainer',
+                swap: 'innerHTML'
+            });
+        }
+
+        function showAddModal() {
+            document.getElementById('modalTitle').textContent = '新增用户';
+            htmx.ajax('GET', '/admin/user/add', {
+                target: '#userFormContainer',
+                swap: 'innerHTML',
+                onSuccess: function() {
+                    document.getElementById('userModal').classList.add('show');
+                }
+            });
+        }
+
+        function showEditModal(id) {
+            document.getElementById('modalTitle').textContent = '编辑用户';
+            htmx.ajax('GET', '/admin/user/edit/' + id, {
+                target: '#userFormContainer',
+                swap: 'innerHTML',
+                onSuccess: function() {
+                    document.getElementById('userModal').classList.add('show');
+                }
+            });
+        }
+
+        function closeUserModal() {
+            document.getElementById('userModal').classList.remove('show');
+        }
+
+        function confirmDelete(id) {
+            if (confirm('确定要删除该用户吗？')) {
+                fetch('/admin/user/delete/' + id, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('删除成功');
+                        loadUserPage(1);
+                    } else {
+                        alert('删除失败: ' + data.message);
+                    }
+                });
+            }
+        }
+
+        // 点击模态框外部关闭
+        document.getElementById('userModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeUserModal();
+            }
+        });
+
+        // 事件委托：处理编辑、删除和分页按钮
+        document.getElementById('userTableContainer')?.addEventListener('click', function(e) {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            
+            const action = btn.getAttribute('data-action');
+            const id = btn.getAttribute('data-id');
+            const page = btn.getAttribute('data-page');
+            
+            if (action === 'edit' && id) {
+                showEditModal(id);
+            } else if (action === 'delete' && id) {
+                confirmDelete(id);
+            } else if (action === 'page' && page) {
+                loadUserPage(parseInt(page));
+            }
+        });
+    </script>
+</th:block>

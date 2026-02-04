@@ -1,270 +1,181 @@
 <template>
-  <div class="users">
-    <div class="page-header">
-      <h2>用户管理</h2>
-      <router-link to="/users/create" class="create-btn">
-        <i class="icon-plus"></i>
-        创建用户
-      </router-link>
-    </div>
-
-    <div class="filters">
-      <el-input
-        v-model="searchQuery"
-        placeholder="搜索用户名或邮箱"
-        style="width: 300px"
-        clearable
-        @input="filterUsers"
-      />
-      <el-select
-        v-model="statusFilter"
-        placeholder="筛选状态"
-        style="width: 120px"
-        clearable
-        @change="filterUsers"
-      >
-        <el-option label="活跃" value="ACTIVE" />
-        <el-option label="禁用" value="DISABLED" />
-      </el-select>
-    </div>
-
-    <el-table
-      :data="filteredUsers"
-      style="width: 100%"
-      :default-sort="{prop: 'createdAt', order: 'descending'}"
+  <div class="users-page">
+    <app-table
+      :fetch-data="fetchUsers"
+      :columns="columns"
+      :search-fields="searchFields"
+      @selection-change="handleSelectionChange"
     >
-      <el-table-column prop="username" label="用户名" width="120" />
-      <el-table-column prop="email" label="邮箱" width="200" />
-      <el-table-column prop="role" label="角色" width="100">
-        <template #default="scope">
-          <el-tag :type="getRoleTagType(scope.row.role)">
-            {{ getRoleLabel(scope.row.role) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="tenantName" label="所属租户" width="120" />
-      <el-table-column prop="status" label="状态" width="80">
-        <template #default="scope">
-          <el-tag :type="scope.row.status === 'ACTIVE' ? 'success' : 'danger'">
-            {{ scope.row.status === 'ACTIVE' ? '活跃' : '禁用' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="createdAt" label="创建时间" width="160">
-        <template #default="scope">
-          {{ formatDate(scope.row.createdAt) }}
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="150">
-        <template #default="scope">
-          <el-button
-            size="small"
-            @click="editUser(scope.row)"
-            type="primary"
-            plain
-          >
-            编辑
-          </el-button>
-          <el-button
-            size="small"
-            @click="toggleUserStatus(scope.row)"
-            :type="scope.row.status === 'ACTIVE' ? 'warning' : 'success'"
-            plain
-          >
-            {{ scope.row.status === 'ACTIVE' ? '禁用' : '启用' }}
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <div v-if="filteredUsers.length === 0" class="empty-state">
-      <p>{{ users.length === 0 ? '暂无用户数据' : '没有找到匹配的用户' }}</p>
-      <router-link v-if="users.length === 0" to="/users/create" class="create-link">
-        创建第一个用户
-      </router-link>
-    </div>
+      <template #operation="{ row }">
+        <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
+        <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
+      </template>
+      
+      <template #toolbar-left>
+        <el-button type="primary" @click="handleAdd">新增用户</el-button>
+      </template>
+    </app-table>
+    
+    <!-- 编辑/新增弹窗 -->
+    <el-dialog
+      v-model="dialogVisible"
+      :title="dialogTitle"
+      width="500px"
+    >
+      <app-form
+        :fields="formFields"
+        v-model="formData"
+        :show-actions="false"
+        ref="formRef"
+      />
+      <template #footer>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSubmit" :loading="submitting">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, reactive, onMounted } from 'vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { getUsers, createUser, updateUser, deleteUser } from '@/api/user';
+import AppTable from '@/components/AppTable.vue';
+import AppForm from '@/components/AppForm.vue';
 
-interface User {
-  id: number
-  username: string
-  email: string
-  role: string
-  tenantName: string
-  status: string
-  createdAt: string
-}
+// 表格列配置
+const columns = [
+  { prop: 'id', label: 'ID', width: 80 },
+  { prop: 'username', label: '用户名', minWidth: 120 },
+  { prop: 'realName', label: '真实姓名', minWidth: 120 },
+  { prop: 'mobile', label: '手机号', minWidth: 120 },
+  { prop: 'email', label: '邮箱', minWidth: 150 },
+  { prop: 'status', label: '状态', type: 'status', minWidth: 100 },
+];
 
-const users = ref<User[]>([])
-const searchQuery = ref('')
-const statusFilter = ref('')
+// 搜索字段配置
+const searchFields = [
+  { prop: 'username', label: '用户名', type: 'input' },
+  { prop: 'realName', label: '真实姓名', type: 'input' },
+];
 
-const filteredUsers = computed(() => {
-  let filtered = users.value
+// 表单字段配置
+const formFields = [
+  { prop: 'tenantId', label: '租户ID', type: 'number', rules: [{ required: true, message: '请输入租户ID', trigger: 'blur' }] },
+  { prop: 'username', label: '用户名', type: 'input', rules: [{ required: true, message: '请输入用户名', trigger: 'blur' }] },
+  { prop: 'realName', label: '真实姓名', type: 'input', rules: [{ required: true, message: '请输入真实姓名', trigger: 'blur' }] },
+  { prop: 'mobile', label: '手机号', type: 'input' },
+  { prop: 'email', label: '邮箱', type: 'input' },
+  { prop: 'status', label: '状态', type: 'select', options: [
+    { label: '启用', value: 1 },
+    { label: '禁用', value: 0 }
+  ], rules: [{ required: true, message: '请选择状态', trigger: 'change' }] },
+  { prop: 'password', label: '密码', type: 'input', rules: [{ required: false, message: '请输入密码', trigger: 'blur' }] },
+];
 
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(user =>
-      user.username.toLowerCase().includes(query) ||
-      user.email.toLowerCase().includes(query)
-    )
-  }
+// 响应式数据
+const dialogVisible = ref(false);
+const dialogTitle = ref('');
+const submitting = ref(false);
+const formRef = ref();
+const currentRow = ref(null);
 
-  if (statusFilter.value) {
-    filtered = filtered.filter(user => user.status === statusFilter.value)
-  }
+// 表单数据
+const formData = reactive({
+  id: undefined,
+  tenantId: 1, // 默认租户ID
+  username: '',
+  realName: '',
+  mobile: '',
+  email: '',
+  status: 1,
+  password: '',
+});
 
-  return filtered
-})
+// 获取数据
+const fetchUsers = async (params: any) => {
+  return await getUsers(params);
+};
 
-const loadUsers = async () => {
-  // Mock data
-  users.value = [
-    {
-      id: 1,
-      username: 'admin',
-      email: 'admin@example.com',
-      role: 'ADMIN',
-      tenantName: '系统租户',
-      status: 'ACTIVE',
-      createdAt: '2026-01-15T09:00:00Z'
-    },
-    {
-      id: 2,
-      username: 'developer',
-      email: 'dev@example.com',
-      role: 'DEVELOPER',
-      tenantName: '研发部',
-      status: 'ACTIVE',
-      createdAt: '2026-01-16T10:30:00Z'
-    },
-    {
-      id: 3,
-      username: 'analyst',
-      email: 'analyst@example.com',
-      role: 'ANALYST',
-      tenantName: '数据部',
-      status: 'DISABLED',
-      createdAt: '2026-01-17T14:20:00Z'
-    }
-  ]
-}
+// 处理新增
+const handleAdd = () => {
+  Object.assign(formData, {
+    id: undefined,
+    tenantId: 1,
+    username: '',
+    realName: '',
+    mobile: '',
+    email: '',
+    status: 1,
+    password: '',
+  });
+  dialogTitle.value = '新增用户';
+  dialogVisible.value = true;
+  currentRow.value = null;
+};
 
-const filterUsers = () => {
-  // Filtering is handled by computed property
-}
+// 处理编辑
+const handleEdit = (row: any) => {
+  Object.assign(formData, { ...row });
+  dialogTitle.value = '编辑用户';
+  dialogVisible.value = true;
+  currentRow.value = row;
+};
 
-const editUser = (user: User) => {
-  // TODO: 实现编辑功能
-  console.log('Edit user:', user)
-}
-
-const toggleUserStatus = async (user: User) => {
-  const action = user.status === 'ACTIVE' ? '禁用' : '启用'
+// 处理删除
+const handleDelete = async (row: any) => {
   try {
-    await ElMessageBox.confirm(
-      `确定要${action}用户 "${user.username}" 吗？`,
-      '确认操作',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
-
-    // Mock API call
-    user.status = user.status === 'ACTIVE' ? 'DISABLED' : 'ACTIVE'
-    ElMessage.success(`用户${action}成功`)
-  } catch {
-    // User cancelled
+    await ElMessageBox.confirm(`确认删除用户 "${row.username}" 吗？`, '提示', {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      type: 'warning',
+    });
+    
+    await deleteUser(row.id);
+    ElMessage.success('删除成功');
+    // 刷新表格
+    // 通过emit事件通知父组件刷新，这里暂时使用页面刷新
+    location.reload();
+  } catch (error) {
+    console.error('删除失败:', error);
   }
-}
+};
 
-const getRoleTagType = (role: string) => {
-  switch (role) {
-    case 'ADMIN': return 'danger'
-    case 'DEVELOPER': return 'primary'
-    case 'ANALYST': return 'success'
-    default: return ''
+// 处理提交
+const handleSubmit = async () => {
+  try {
+    if (formData.id) {
+      // 更新用户
+      await updateUser(formData.id, formData);
+      ElMessage.success('更新成功');
+    } else {
+      // 创建用户
+      await createUser(formData);
+      ElMessage.success('创建成功');
+    }
+    dialogVisible.value = false;
+    // 通知表格刷新数据
+    window.location.reload(); // 简单的刷新页面方式
+  } catch (error) {
+    console.error('操作失败:', error);
+    ElMessage.error('操作失败');
   }
-}
+};
 
-const getRoleLabel = (role: string) => {
-  switch (role) {
-    case 'ADMIN': return '管理员'
-    case 'DEVELOPER': return '开发者'
-    case 'ANALYST': return '分析师'
-    default: return role
-  }
-}
-
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('zh-CN')
-}
+// 处理表格选中变化
+const handleSelectionChange = (selection: any[]) => {
+  console.log('选中项变化:', selection);
+};
 
 onMounted(() => {
-  loadUsers()
-})
+  console.log('Users page mounted');
+});
 </script>
 
 <style scoped>
-.users {
+.users-page {
   padding: 20px;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.page-header h2 {
-  margin: 0;
-  color: #333;
-}
-
-.create-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background: #409eff;
-  color: white;
-  text-decoration: none;
-  border-radius: 4px;
-  font-size: 14px;
-  transition: background-color 0.3s;
-}
-
-.create-btn:hover {
-  background: #337ecc;
-}
-
-.filters {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-  color: #999;
-}
-
-.create-link {
-  color: #409eff;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.create-link:hover {
-  text-decoration: underline;
+  background: #f5f5f5;
+  min-height: 100vh;
 }
 </style>

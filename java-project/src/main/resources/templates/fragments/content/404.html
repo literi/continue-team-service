@@ -1,0 +1,14 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="notFound">
+    <div class="content-card">
+        <div class="error-404">
+            <h2>404</h2>
+            <p>抱歉，你访问的内容不存在！</p>
+            <button type="button" class="btn btn-primary"
+                    hx-get="/admin/load-content/dashboard"
+                    hx-target="#contentContainer"
+                    hx-swap="innerHTML">
+                返回仪表盘
+            </button>
+        </div>
+    </div>
+</th:block>

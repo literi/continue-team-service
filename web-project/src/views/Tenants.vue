@@ -1,408 +1,168 @@
 <template>
   <div class="tenants-page">
-    <div class="page-header">
-      <div class="header-left">
-        <h2>租户管理</h2>
-        <p>管理系统中的所有租户</p>
-      </div>
-      <div class="header-right">
-        <el-button type="primary" @click="showCreateDialog">
-          <el-icon><Plus /></el-icon>
-          创建租户
-        </el-button>
-      </div>
-    </div>
-
-    <!-- 搜索和筛选 -->
-    <el-card class="filter-card">
-      <el-form :inline="true" :model="filterForm" class="filter-form">
-        <el-form-item label="租户名称">
-          <el-input
-            v-model="filterForm.name"
-            placeholder="请输入租户名称"
-            clearable
-            style="width: 200px"
-          />
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="filterForm.status" placeholder="请选择状态" clearable style="width: 120px">
-            <el-option label="活跃" value="ACTIVE" />
-            <el-option label="停用" value="INACTIVE" />
-            <el-option label="待审核" value="PENDING" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch">搜索</el-button>
-          <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
-
-    <!-- 租户列表 -->
-    <el-card>
-      <template #header>
-        <div class="table-header">
-          <span>租户列表</span>
-          <div class="table-actions">
-            <el-button size="small" @click="loadTenants">
-              <el-icon><Refresh /></el-icon>
-              刷新
-            </el-button>
-          </div>
-        </div>
-      </template>
-
-      <el-table
-        :data="tenants"
-        v-loading="loading"
-        style="width: 100%"
-        @selection-change="handleSelectionChange"
-      >
-        <el-table-column type="selection" width="55" />
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="name" label="租户名称" min-width="150" />
-        <el-table-column prop="description" label="描述" min-width="200" />
-        <el-table-column prop="status" label="状态" width="100">
-          <template #default="scope">
-            <el-tag :type="getStatusType(scope.row.status)">
-              {{ getStatusText(scope.row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="userCount" label="用户数" width="100" />
-        <el-table-column prop="projectCount" label="项目数" width="100" />
-        <el-table-column prop="createdAt" label="创建时间" width="120" />
-        <el-table-column label="操作" width="200" fixed="right">
-          <template #default="scope">
-            <el-button size="small" @click="viewTenant(scope.row)">查看</el-button>
-            <el-button size="small" type="primary" @click="editTenant(scope.row)">编辑</el-button>
-            <el-dropdown @command="(command:any) => handleCommand(command, scope.row)">
-              <el-button size="small">
-                更多 <el-icon class="el-icon--right"><ArrowDown /></el-icon>
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="users">管理用户</el-dropdown-item>
-                  <el-dropdown-item command="projects">管理项目</el-dropdown-item>
-                  <el-dropdown-item command="config" divided>配置管理</el-dropdown-item>
-                  <el-dropdown-item
-                    command="delete"
-                    :disabled="scope.row.status === 'ACTIVE'"
-                  >
-                    删除
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <!-- 分页 -->
-      <div class="pagination">
-        <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50, 100]"
-          :total="total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
-      </div>
-    </el-card>
-
-    <!-- 创建租户对话框 -->
-    <el-dialog
-      v-model="createDialogVisible"
-      title="创建租户"
-      width="500px"
+    <app-table
+      :fetch-data="fetchTenants"
+      :columns="columns"
+      :search-fields="searchFields"
+      @selection-change="handleSelectionChange"
     >
-      <el-form
-        ref="createFormRef"
-        :model="createForm"
-        :rules="createRules"
-        label-width="100px"
-      >
-        <el-form-item label="租户名称" prop="name">
-          <el-input v-model="createForm.name" placeholder="请输入租户名称" />
-        </el-form-item>
-        <el-form-item label="描述" prop="description">
-          <el-input
-            v-model="createForm.description"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入租户描述"
-          />
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-select v-model="createForm.status" placeholder="请选择状态">
-            <el-option label="活跃" value="ACTIVE" />
-            <el-option label="停用" value="INACTIVE" />
-            <el-option label="待审核" value="PENDING" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-
+      <template #operation="{ row }">
+        <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
+        <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
+      </template>
+      
+      <template #toolbar-left>
+        <el-button type="primary" @click="handleAdd">新增租户</el-button>
+      </template>
+    </app-table>
+    
+    <!-- 编辑/新增弹窗 -->
+    <el-dialog
+      v-model="dialogVisible"
+      :title="dialogTitle"
+      width="600px"
+    >
+      <app-form
+        :fields="formFields"
+        v-model="formData"
+        :show-actions="false"
+        ref="formRef"
+      />
       <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="createDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleCreate" :loading="creating">
-            创建
-          </el-button>
-        </span>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSubmit" :loading="submitting">确定</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import axios from 'axios'
-import {
-  Plus,
-  Refresh,
-  ArrowDown
-} from '@element-plus/icons-vue'
+import { ref, reactive } from 'vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { getTenants, createTenant, updateTenant, deleteTenant } from '@/api/tenant';
+import AppTable from '@/components/AppTable.vue';
+import AppForm from '@/components/AppForm.vue';
 
-interface Tenant {
-  id: number
-  name: string
-  status: string
-  description: string
-  createdAt: string
-  userCount: number
-  projectCount: number
-}
+// 表格列配置
+const columns = [
+  { prop: 'id', label: 'ID', width: 80 },
+  { prop: 'tenantCode', label: '租户编码', minWidth: 120 },
+  { prop: 'tenantName', label: '租户名称', minWidth: 150 },
+  { prop: 'status', label: '状态', type: 'status', minWidth: 100 },
+  { prop: 'createTime', label: '创建时间', minWidth: 150 },
+];
 
-const tenants = ref<Tenant[]>([])
-const loading = ref(false)
-const currentPage = ref(1)
-const pageSize = ref(10)
-const total = ref(0)
-const selectedTenants = ref<Tenant[]>([])
+// 搜索字段配置
+const searchFields = [
+  { prop: 'tenantCode', label: '租户编码', type: 'input' },
+  { prop: 'tenantName', label: '租户名称', type: 'input' },
+];
 
-const filterForm = reactive({
-  name: '',
-  status: ''
-})
+// 表单字段配置
+const formFields = [
+  { prop: 'tenantCode', label: '租户编码', type: 'input', rules: [{ required: true, message: '请输入租户编码', trigger: 'blur' }] },
+  { prop: 'tenantName', label: '租户名称', type: 'input', rules: [{ required: true, message: '请输入租户名称', trigger: 'blur' }] },
+  { prop: 'status', label: '状态', type: 'select', options: [
+    { label: '启用', value: 1 },
+    { label: '禁用', value: 0 }
+  ], rules: [{ required: true, message: '请选择状态', trigger: 'change' }] },
+  { prop: 'expireTime', label: '过期时间', type: 'date' },
+  { prop: 'remark', label: '备注', type: 'textarea' },
+];
 
-const createDialogVisible = ref(false)
-const creating = ref(false)
-const createFormRef = ref()
-const createForm = reactive({
-  name: '',
-  description: '',
-  status: 'ACTIVE'
-})
+// 响应式数据
+const dialogVisible = ref(false);
+const dialogTitle = ref('');
+const submitting = ref(false);
+const currentRow = ref(null);
 
-const createRules = {
-  name: [
-    { required: true, message: '请输入租户名称', trigger: 'blur' },
-    { min: 2, max: 50, message: '租户名称长度在 2 到 50 个字符', trigger: 'blur' }
-  ],
-  description: [
-    { max: 200, message: '描述不能超过200个字符', trigger: 'blur' }
-  ]
-}
+// 表单数据
+const formData = reactive({
+  id: undefined,
+  tenantCode: '',
+  tenantName: '',
+  status: 1,
+  expireTime: '',
+  remark: '',
+});
 
-const getStatusType = (status: string) => {
-  const types: Record<string, string> = {
-    ACTIVE: 'success',
-    INACTIVE: 'danger',
-    PENDING: 'warning'
-  }
-  return types[status] || 'info'
-}
+// 获取数据
+const fetchTenants = async (params: any) => {
+  return await getTenants(params);
+};
 
-const getStatusText = (status: string) => {
-  const texts: Record<string, string> = {
-    ACTIVE: '活跃',
-    INACTIVE: '停用',
-    PENDING: '待审核'
-  }
-  return texts[status] || status
-}
+// 处理新增
+const handleAdd = () => {
+  Object.assign(formData, {
+    id: undefined,
+    tenantCode: '',
+    tenantName: '',
+    status: 1,
+    expireTime: '',
+    remark: '',
+  });
+  dialogTitle.value = '新增租户';
+  dialogVisible.value = true;
+  currentRow.value = null;
+};
 
-const loadTenants = async () => {
-  loading.value = true
+// 处理编辑
+const handleEdit = (row: any) => {
+  Object.assign(formData, { ...row });
+  dialogTitle.value = '编辑租户';
+  dialogVisible.value = true;
+  currentRow.value = row;
+};
+
+// 处理删除
+const handleDelete = async (row: any) => {
   try {
-    const response = await axios.get('/api/v1/tenants', {
-      params: {
-        page: currentPage.value,
-        size: pageSize.value,
-        ...filterForm
-      }
-    })
-    tenants.value = response.data.data
-    total.value = response.data.total || tenants.value.length
+    await ElMessageBox.confirm(`确认删除租户 "${row.tenantName}" 吗？`, '提示', {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      type: 'warning',
+    });
+    
+    await deleteTenant(row.id);
+    ElMessage.success('删除成功');
+    // 通过emit事件通知父组件刷新，这里暂时使用页面刷新
+    location.reload();
   } catch (error) {
-    console.error('Failed to load tenants:', error)
-    ElMessage.error('加载租户列表失败')
-  } finally {
-    loading.value = false
+    console.error('删除失败:', error);
   }
-}
+};
 
-const handleSearch = () => {
-  currentPage.value = 1
-  loadTenants()
-}
-
-const handleReset = () => {
-  Object.assign(filterForm, {
-    name: '',
-    status: ''
-  })
-  handleSearch()
-}
-
-const handleSelectionChange = (selection: Tenant[]) => {
-  selectedTenants.value = selection
-}
-
-const handleSizeChange = (size: number) => {
-  pageSize.value = size
-  loadTenants()
-}
-
-const handleCurrentChange = (page: number) => {
-  currentPage.value = page
-  loadTenants()
-}
-
-const showCreateDialog = () => {
-  createDialogVisible.value = true
-  Object.assign(createForm, {
-    name: '',
-    description: '',
-    status: 'ACTIVE'
-  })
-}
-
-const handleCreate = async () => {
-  if (!createFormRef.value) return
-
-  await createFormRef.value.validate(async (valid: boolean) => {
-    if (valid) {
-      creating.value = true
-      try {
-        await axios.post('/api/v1/tenants', createForm)
-        ElMessage.success('创建租户成功')
-        createDialogVisible.value = false
-        loadTenants()
-      } catch (error) {
-        console.error('Failed to create tenant:', error)
-        ElMessage.error('创建租户失败')
-      } finally {
-        creating.value = false
-      }
+// 处理提交
+const handleSubmit = async () => {
+  try {
+    if (formData.id) {
+      // 更新租户
+      await updateTenant(formData.id, formData);
+      ElMessage.success('更新成功');
+    } else {
+      // 创建租户
+      await createTenant(formData);
+      ElMessage.success('创建成功');
     }
-  })
-}
-
-const viewTenant = (tenant: Tenant) => {
-  // 查看租户详情
-  console.log('View tenant:', tenant)
-}
-
-const editTenant = (tenant: Tenant) => {
-  // 编辑租户
-  console.log('Edit tenant:', tenant)
-}
-
-const handleCommand = (command: string, tenant: Tenant) => {
-  switch (command) {
-    case 'users':
-      // 管理用户
-      console.log('Manage users for tenant:', tenant)
-      break
-    case 'projects':
-      // 管理项目
-      console.log('Manage projects for tenant:', tenant)
-      break
-    case 'config':
-      // 配置管理
-      console.log('Config for tenant:', tenant)
-      break
-    case 'delete':
-      // 删除租户
-      ElMessageBox.confirm(
-        `确定要删除租户 "${tenant.name}" 吗？此操作不可恢复。`,
-        '确认删除',
-        {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }
-      ).then(() => {
-        // 执行删除逻辑
-        console.log('Delete tenant:', tenant)
-      })
-      break
+    dialogVisible.value = false;
+    // 通知表格刷新数据
+    location.reload(); // 简单的刷新页面方式
+  } catch (error) {
+    console.error('操作失败:', error);
+    ElMessage.error('操作失败');
   }
-}
+};
 
-onMounted(() => {
-  loadTenants()
-})
+// 处理表格选中变化
+const handleSelectionChange = (selection: any[]) => {
+  console.log('选中项变化:', selection);
+};
 </script>
 
 <style scoped>
 .tenants-page {
   padding: 20px;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24px;
-}
-
-.header-left h2 {
-  margin: 0 0 8px 0;
-  color: #303133;
-  font-size: 24px;
-  font-weight: 600;
-}
-
-.header-left p {
-  margin: 0;
-  color: #606266;
-  font-size: 14px;
-}
-
-.filter-card {
-  margin-bottom: 20px;
-}
-
-.filter-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.table-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.table-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.pagination {
-  margin-top: 20px;
-  text-align: right;
-}
-
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
+  background: #f5f5f5;
+  min-height: 100vh;
 }
 </style>

@@ -1,0 +1,24 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="dashboard">
+    <div class="content-card">
+        <h2>仪表盘</h2>
+        <p>欢迎进入后台管理系统，以下是核心数据统计</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stats-card">
+            <div class="stats-name">总用户数</div>
+            <div class="stats-num" th:text="${totalUser}">0</div>
+            <div>较昨日 +5.2%</div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-name">今日活跃</div>
+            <div class="stats-num" th:text="${todayActive}">0</div>
+            <div>较昨日 +3.8%</div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-name">总订单数</div>
+            <div class="stats-num" th:text="${totalOrder}">0</div>
+            <div>较昨日 +7.1%</div>
+        </div>
+    </div>
+</th:block>

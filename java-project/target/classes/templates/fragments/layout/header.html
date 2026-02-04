@@ -1,0 +1,11 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="header(loginUser)">
+    <div class="header">
+        <button type="button" class="toggle-btn" aria-label="折叠侧边栏">☰</button>
+        <div class="header-title">后台管理</div>
+        <div class="user-info">
+            <span class="user-avatar" th:text="${#strings.substring(loginUser, 0, 1)}">U</span>
+            <span class="user-name" th:text="${loginUser}">未知用户</span>
+            <a th:href="@{/logout}" class="logout-link">退出</a>
+        </div>
+    </div>
+</th:block>

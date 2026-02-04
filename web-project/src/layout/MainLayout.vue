@@ -19,25 +19,43 @@
 
 <script lang="ts" setup>
 import { inject, onMounted } from "vue";
+import { useRoute } from "vue-router";
 import AppTabs from "../components/AppTabs.vue";
 import AppAside from "../components/AppAside.vue";
 import AppHeader from "../components/AppHeader.vue";
 import type { IGlobalConfig } from "../dto/IGlobalConfig";
 import { getMenuList, getUserInfo } from "../api/profile";
-const globalConfig = inject<IGlobalConfig>("globalConfig");
-onMounted(() => {
-  // 初始化全局配置
-  // 获取用户信息
-  getUserInfo().then(res=>{
-    console.log(res)
-  })
-  getMenuList().then(res=>{
-    console.log(res)
-  })
-  // 请求菜单数据
+import { router } from "../router";
+import { addMenuTab, updateActiveTab } from "../utils/globalState";
 
-  console.log(globalConfig);
-});
+const route = useRoute();
+const globalConfig = inject<IGlobalConfig>("globalConfig");
+
+// 初始化全局配置
+// 获取用户信息
+getUserInfo().then(res=>{
+  if(globalConfig) {
+    globalConfig!.userInfo = res.data;
+  }
+})
+
+// 监听路由变化，添加标签页
+watch(() => route.path, (newPath) => {
+  if (newPath && newPath !== '/' && newPath !== '/login') {
+    // 查找当前路由对应的菜单项
+    const matchedMenuItem = globalConfig?.menuList.find(item => item.resourcePath === newPath);
+    
+    if (matchedMenuItem) {
+      // 添加到标签页
+      addMenuTab(matchedMenuItem);
+      // 更新激活的标签页
+      updateActiveTab(newPath);
+    }
+  }
+}, { immediate: true });
+
+import { watch } from "vue";
+
 </script>
 <style lang="scss" scoped>
 .app-container {
@@ -69,6 +87,7 @@ onMounted(() => {
       padding: $app-padding;
       overflow: auto;
       background: #fff;
+      border: 1px solid red;
     }
   }
 }

@@ -1,0 +1,154 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="permissionList">
+    <div class="content-card">
+        <h2>权限管理</h2>
+        <p>管理系统权限信息。</p>
+        <button type="button" class="btn btn-primary" onclick="showAddPermissionModal()">新增权限</button>
+
+        <div id="permissionTableContainer">
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>权限名称</th>
+                            <th>权限代码</th>
+                            <th>类型</th>
+                            <th>资源路径</th>
+                            <th>请求方法</th>
+                            <th>排序</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="perm : ${pageResult.content}">
+                            <td th:text="${perm.permName}">-</td>
+                            <td th:text="${perm.permCode}">-</td>
+                            <td th:text="${perm.permType}">-</td>
+                            <td th:text="${perm.resourcePath ?: '-'}">-</td>
+                            <td th:text="${perm.method ?: '-'}">-</td>
+                            <td th:text="${perm.sort}">-</td>
+                            <td>
+                                <span th:if="${perm.status}" style="color: #52c41a;">启用</span>
+                                <span th:unless="${perm.status}" style="color: #ff4d4f;">禁用</span>
+                            </td>
+                            <td>
+                                <div class="actions">
+                                    <button type="button" class="btn btn-sm btn-edit" 
+                                            data-action="edit"
+                                            th:data-id="${perm.id}">
+                                        编辑
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger btn-delete" 
+                                            data-action="delete"
+                                            th:data-id="${perm.id}">
+                                        删除
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(pageResult.content)}">
+                            <td colspan="8" style="text-align: center; color: #999;">暂无数据</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination" th:if="${pageResult.totalPages > 0}">
+                <button type="button" class="btn btn-sm btn-page" 
+                        th:disabled="${pageResult.isFirst}"
+                        data-action="page"
+                        th:data-page="${pageResult.currentPage - 1}">
+                    上一页
+                </button>
+                <span class="page-info">
+                    第 <span th:text="${pageResult.currentPage}">1</span> 页 / 共 <span th:text="${pageResult.totalPages}">1</span> 页
+                    （共 <span th:text="${pageResult.totalElements}">0</span> 条）
+                </span>
+                <button type="button" class="btn btn-sm btn-page" 
+                        th:disabled="${pageResult.isLast}"
+                        data-action="page"
+                        th:data-page="${pageResult.currentPage + 1}">
+                    下一页
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="permissionModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="permissionModalTitle">新增权限</h3>
+                <button type="button" class="modal-close" onclick="closePermissionModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="permissionFormContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        function loadPermissionPage(page) {
+            htmx.ajax('GET', '/admin/permission/list?page=' + page, {
+                target: '#contentContainer',
+                swap: 'innerHTML'
+            });
+        }
+
+        function showAddPermissionModal() {
+            document.getElementById('permissionModalTitle').textContent = '新增权限';
+            htmx.ajax('GET', '/admin/permission/add', {
+                target: '#permissionFormContainer',
+                swap: 'innerHTML',
+                onSuccess: function() {
+                    document.getElementById('permissionModal').classList.add('show');
+                }
+            });
+        }
+
+        function showEditPermissionModal(id) {
+            document.getElementById('permissionModalTitle').textContent = '编辑权限';
+            htmx.ajax('GET', '/admin/permission/edit/' + id, {
+                target: '#permissionFormContainer',
+                swap: 'innerHTML',
+                onSuccess: function() {
+                    document.getElementById('permissionModal').classList.add('show');
+                }
+            });
+        }
+
+        function closePermissionModal() {
+            document.getElementById('permissionModal').classList.remove('show');
+        }
+
+        function confirmDeletePermission(id) {
+            if (confirm('确定要删除该权限吗？')) {
+                fetch('/admin/permission/delete/' + id, {method: 'POST'})
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.success ? '删除成功' : '删除失败: ' + data.message);
+                    if (data.success) loadPermissionPage(1);
+                });
+            }
+        }
+
+        document.getElementById('permissionModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closePermissionModal();
+        });
+
+        // 事件委托：处理编辑、删除和分页按钮
+        document.getElementById('permissionTableContainer')?.addEventListener('click', function(e) {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            
+            const action = btn.getAttribute('data-action');
+            const id = btn.getAttribute('data-id');
+            const page = btn.getAttribute('data-page');
+            
+            if (action === 'edit' && id) {
+                showEditPermissionModal(id);
+            } else if (action === 'delete' && id) {
+                confirmDeletePermission(id);
+            } else if (action === 'page' && page) {
+                loadPermissionPage(parseInt(page));
+            }
+        });
+    </script>
+</th:block>

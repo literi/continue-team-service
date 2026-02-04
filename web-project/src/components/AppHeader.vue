@@ -121,11 +121,12 @@ fetchUserInfo()
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 60px;
+  height: $app-header-height;
   padding: 0 20px;
   background: #fff;
   box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
   box-sizing: border-box;
+  border-bottom: 1px solid #e4e7ed;
 
   .header-left {
     display: flex;

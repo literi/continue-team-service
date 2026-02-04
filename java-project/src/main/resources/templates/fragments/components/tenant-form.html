@@ -1,0 +1,60 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="tenantForm">
+    <form id="tenantForm" onsubmit="saveTenant(event)">
+        <input type="hidden" name="id" th:value="${tenant?.id}" />
+        
+        <div class="form-group">
+            <label>租户名称 <span style="color: red;">*</span></label>
+            <input type="text" name="tenantName" th:value="${tenant?.tenantName}" required />
+        </div>
+
+        <div class="form-group">
+            <label>租户代码 <span style="color: red;">*</span></label>
+            <input type="text" name="tenantCode" th:value="${tenant?.tenantCode}" required />
+        </div>
+
+        <div class="form-group">
+            <label>联系人</label>
+            <input type="text" name="contactPerson" th:value="${tenant?.contactPerson}" />
+        </div>
+
+        <div class="form-group">
+            <label>联系电话</label>
+            <input type="text" name="contactPhone" th:value="${tenant?.contactPhone}" />
+        </div>
+
+        <div class="form-group">
+            <label>状态</label>
+            <select name="status">
+                <option value="true" th:selected="${tenant?.status == true}">启用</option>
+                <option value="false" th:selected="${tenant?.status == false}">禁用</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>过期时间</label>
+            <input type="datetime-local" name="expireTime" 
+                   th:value="${tenant?.expireTime != null ? #temporals.format(tenant.expireTime, 'yyyy-MM-dd\'T\'HH:mm') : ''}" />
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn" onclick="closeTenantModal()">取消</button>
+            <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+    </form>
+
+    <script>
+        function saveTenant(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            fetch('/admin/tenant/save', {method: 'POST', body: formData})
+            .then(res => res.json())
+            .then(data => {
+                alert(data.success ? '保存成功' : '保存失败: ' + data.message);
+                if (data.success) {
+                    closeTenantModal();
+                    loadTenantPage(1);
+                }
+            });
+        }
+    </script>
+</th:block>

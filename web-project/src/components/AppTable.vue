@@ -50,15 +50,24 @@
       >
         <template #default="scope">
           <!-- 自定义插槽内容 -->
-          <slot 
-            :name="column.slotName || column.prop" 
-            :row="scope.row" 
-            :index="scope.$index" 
+          <slot
+            :name="column.slotName || column.prop"
+            :row="scope.row"
+            :index="scope.$index"
             :column="column"
           >
             <!-- 默认渲染 -->
-            <template v-if="column.formatter && typeof column.formatter === 'function'">
-              {{ column.formatter(scope.row, scope.column, scope.row[column.prop], scope.$index) }}
+            <template
+              v-if="column.formatter && typeof column.formatter === 'function'"
+            >
+              {{
+                column.formatter(
+                  scope.row,
+                  scope.column,
+                  scope.row[column.prop],
+                  scope.$index
+                )
+              }}
             </template>
             <template v-else-if="column.type === 'status'">
               <el-tag :type="getStatusTagType(scope.row[column.prop])">
@@ -73,9 +82,9 @@
       </el-table-column>
 
       <!-- 操作列 -->
-      <el-table-column 
-        v-if="operationColumn" 
-        label="操作" 
+      <el-table-column
+        v-if="operationColumn"
+        label="操作"
         :fixed="operationFixed"
         :width="operationWidth"
       >
@@ -101,153 +110,133 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch, PropType } from 'vue'
-import { Refresh } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
-import AppForm from './AppForm.vue'
+import { ref, reactive, computed, onMounted, watch, PropType } from "vue";
+import { Refresh } from "@element-plus/icons-vue";
+import { ElMessage } from "element-plus";
+import AppForm from "./AppForm.vue";
 
-// 定义表格列的类型
-interface TableColumn {
-  prop: string
-  label: string
-  width?: number | string
-  minWidth?: number | string
-  fixed?: boolean | 'left' | 'right'
-  sortable?: boolean | 'custom'
-  type?: 'normal' | 'status' | 'expand' | 'selection'
-  formatter?: (row: any, column: any, cellValue: any, index: number) => any
-  slotName?: string
-  [key: string]: any
-}
-
-// 定义搜索字段的类型
-interface SearchField {
-  prop: string
-  label: string
-  type?: 'input' | 'select' | 'date' | 'daterange'
-  options?: Array<{ label: string; value: any }>
-}
+import type { TableColumn, SearchField } from "../dto/ITable";
 
 // 定义响应式数据
 const props = defineProps({
   // 数据获取函数
   fetchData: {
     type: Function as PropType<(params: any) => Promise<any>>,
-    required: true
+    required: true,
   },
   // 表格列配置
   columns: {
     type: Array as PropType<TableColumn[]>,
-    default: () => []
+    default: () => [],
   },
   // 是否显示边框
   border: {
     type: Boolean,
-    default: true
+    default: true,
   },
   // 是否显示斑马纹
   stripe: {
     type: Boolean,
-    default: true
+    default: true,
   },
   // 表格主键字段
   rowKey: {
     type: String,
-    default: 'id'
+    default: "id",
   },
   // 是否显示搜索区域
   showSearch: {
     type: Boolean,
-    default: true
+    default: true,
   },
   // 搜索字段配置
   searchFields: {
     type: Array as PropType<SearchField[]>,
-    default: () => []
+    default: () => [],
   },
   // 是否显示分页
   showPagination: {
     type: Boolean,
-    default: true
+    default: true,
   },
   // 分页布局
   paginationLayout: {
     type: String,
-    default: 'total, sizes, prev, pager, next, jumper'
+    default: "total, sizes, prev, pager, next, jumper",
   },
   // 页面大小选项
   pageSizes: {
     type: Array as PropType<number[]>,
-    default: () => [10, 20, 50, 100]
+    default: () => [10, 20, 50, 100],
   },
   // 操作列相关配置
   operationColumn: {
     type: Boolean,
-    default: true
+    default: true,
   },
   operationFixed: {
     type: [Boolean, String],
-    default: 'right'
+    default: "right",
   },
   operationWidth: {
     type: Number,
-    default: 150
+    default: 150,
   },
   // 初始页面大小
   initialPageSize: {
     type: Number,
-    default: 10
+    default: 10,
   },
   // 初始页码
   initialPage: {
     type: Number,
-    default: 1
+    default: 1,
   },
   // 列表项状态映射
   statusMap: {
     type: Object,
     default: () => ({
-      ACTIVE: { text: '活跃', type: 'success' },
-      INACTIVE: { text: '停用', type: 'info' },
-      PENDING: { text: '待审核', type: 'warning' },
-      DISABLED: { text: '禁用', type: 'danger' }
-    })
-  }
-})
+      ACTIVE: { text: "活跃", type: "success" },
+      INACTIVE: { text: "停用", type: "info" },
+      PENDING: { text: "待审核", type: "warning" },
+      DISABLED: { text: "禁用", type: "danger" },
+    }),
+  },
+});
 
 // 定义事件
-const emit = defineEmits(['selection-change', 'refresh', 'load-data'])
+const emit = defineEmits(["selection-change", "refresh", "load-data"]);
 
 // 响应式数据
-const tableData = ref<any[]>([])
-const total = ref(0)
-const loading = ref(false)
-const currentPage = ref(props.initialPage)
-const pageSize = ref(props.initialPageSize)
+const tableData = ref<any[]>([]);
+const total = ref(0);
+const loading = ref(false);
+const currentPage = ref(props.initialPage);
+const pageSize = ref(props.initialPageSize);
 
 // 搜索表单
-const searchForm = reactive<Record<string, any>>({})
+const searchForm = reactive<Record<string, any>>({});
 
 // 初始化搜索表单默认值
-props.searchFields.forEach(field => {
-  searchForm[field.prop] = ''
-})
+props.searchFields.forEach((field) => {
+  searchForm[field.prop] = "";
+});
 
 // 将搜索字段转换为 AppForm 需要的格式
 const normalizedSearchFields = computed(() => {
-  return props.searchFields.map(field => {
+  return props.searchFields.map((field) => {
     // 映射类型
-    let fieldType: string = field.type || 'input'
-    if (fieldType === 'daterange') {
-      fieldType = 'daterange'
-    } else if (fieldType === 'date') {
-      fieldType = 'date'
-    } else if (fieldType === 'select') {
-      fieldType = 'select'
+    let fieldType: string = field.type || "input";
+    if (fieldType === "daterange") {
+      fieldType = "daterange";
+    } else if (fieldType === "date") {
+      fieldType = "date";
+    } else if (fieldType === "select") {
+      fieldType = "select";
     } else {
-      fieldType = 'input'
+      fieldType = "input";
     }
-    
+
     return {
       prop: field.prop,
       label: field.label,
@@ -255,173 +244,192 @@ const normalizedSearchFields = computed(() => {
       options: field.options,
       placeholder: `请输入${field.label}`,
       clearable: true,
-    }
-  })
-})
+    };
+  });
+});
 
 // 当前排序信息
 const currentSort = ref({
-  prop: '',
-  order: ''
-})
+  prop: "",
+  order: "",
+});
 
 // 表格选中项
-const selection = ref<any[]>([])
+const selection = ref<any[]>([]);
 
 // 搜索防抖定时器
-let searchTimer: NodeJS.Timeout | null = null
+let searchTimer: NodeJS.Timeout | null = null;
 
 // 计算属性：请求参数
 const queryParams = computed(() => {
   const params: any = {
     page: currentPage.value,
-    size: pageSize.value
-  }
+    size: pageSize.value,
+  };
 
   // 添加搜索条件
   for (const key in searchForm) {
-    if (searchForm[key] !== null && searchForm[key] !== '') {
-      params[key] = searchForm[key]
+    if (searchForm[key] !== null && searchForm[key] !== "") {
+      params[key] = searchForm[key];
     }
   }
 
   // 添加排序参数
   if (currentSort.value.prop && currentSort.value.order) {
-    params.sort = `${currentSort.value.prop},${currentSort.value.order.startsWith('asc') ? 'asc' : 'desc'}`
+    params.sort = `${currentSort.value.prop},${
+      currentSort.value.order.startsWith("asc") ? "asc" : "desc"
+    }`;
   }
 
-  return params
-})
+  return params;
+});
 
 // 获取数据
 const loadData = async () => {
   try {
-    loading.value = true
-    const response = await props.fetchData(queryParams.value)
-    
+    loading.value = true;
+    const response = await props.fetchData(queryParams.value);
+
     // 根据不同的响应格式处理数据
     if (response && response.data) {
       if (Array.isArray(response.data)) {
         // 直接是数组格式
-        tableData.value = response.data
-        total.value = response.data.length
-      } else if (response.data.list || response.data.items || response.data.data) {
+        tableData.value = response.data;
+        total.value = response.data.length;
+      } else if (
+        response.data.list ||
+        response.data.items ||
+        response.data.data
+      ) {
         // 包含分页信息的对象格式
-        tableData.value = response.data.list || response.data.items || response.data.data
-        total.value = response.data.total || response.data.count || response.data.totalCount || 0
+        tableData.value =
+          response.data.list || response.data.items || response.data.data;
+        total.value =
+          response.data.total ||
+          response.data.count ||
+          response.data.totalCount ||
+          0;
       } else {
         // 其他格式
-        tableData.value = []
-        total.value = 0
+        tableData.value = [];
+        total.value = 0;
       }
     } else {
-      tableData.value = []
-      total.value = 0
+      tableData.value = [];
+      total.value = 0;
     }
-    
-    emit('load-data', tableData.value, response)
+
+    emit("load-data", tableData.value, response);
   } catch (error) {
-    console.error('Failed to load table data:', error)
-    ElMessage.error('加载数据失败')
-    tableData.value = []
-    total.value = 0
+    console.error("Failed to load table data:", error);
+    ElMessage.error("加载数据失败");
+    tableData.value = [];
+    total.value = 0;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 // 刷新数据
 const refresh = () => {
-  currentPage.value = 1
-  loadData()
-  emit('refresh')
-}
+  currentPage.value = 1;
+  loadData();
+  emit("refresh");
+};
 
 // 处理搜索字段变化
-const handleSearchFieldChange = (field: string, value: any, formData: Record<string, any>) => {
+const handleSearchFieldChange = (
+  field: string,
+  value: any,
+  formData: Record<string, any>
+) => {
   // 搜索字段变化时延迟触发搜索，避免频繁请求
   if (searchTimer) {
-    clearTimeout(searchTimer)
+    clearTimeout(searchTimer);
   }
   searchTimer = setTimeout(() => {
-    currentPage.value = 1
-    loadData()
-  }, 500)
-}
+    currentPage.value = 1;
+    loadData();
+  }, 500);
+};
 
 // 处理搜索
 const handleSearch = () => {
-  currentPage.value = 1
-  loadData()
-}
+  currentPage.value = 1;
+  loadData();
+};
 
 // 处理重置
 const handleReset = () => {
   // 重置搜索表单
   for (const key in searchForm) {
-    searchForm[key] = ''
+    searchForm[key] = "";
   }
-  currentPage.value = 1
-  loadData()
-}
+  currentPage.value = 1;
+  loadData();
+};
 
 // 处理页面大小变化
 const handleSizeChange = (size: number) => {
-  pageSize.value = size
-  currentPage.value = 1
-  loadData()
-}
+  pageSize.value = size;
+  currentPage.value = 1;
+  loadData();
+};
 
 // 处理页码变化
 const handleCurrentChange = (page: number) => {
-  currentPage.value = page
-  loadData()
-}
+  currentPage.value = page;
+  loadData();
+};
 
 // 处理表格选中变化
 const handleSelectionChange = (val: any[]) => {
-  selection.value = val
-  emit('selection-change', val)
-}
+  selection.value = val;
+  emit("selection-change", val);
+};
 
 // 处理排序变化
 const handleSortChange = (params: any) => {
   currentSort.value = {
     prop: params.prop,
-    order: params.order
-  }
-  currentPage.value = 1
-  loadData()
-}
+    order: params.order,
+  };
+  currentPage.value = 1;
+  loadData();
+};
 
 // 获取状态标签类型
 const getStatusTagType = (status: string) => {
-  const statusInfo = props.statusMap[status]
-  return statusInfo ? statusInfo.type : 'info'
-}
+  const statusInfo = props.statusMap[status];
+  return statusInfo ? statusInfo.type : "info";
+};
 
 // 获取状态文本
 const getStatusText = (status: string) => {
-  const statusInfo = props.statusMap[status]
-  return statusInfo ? statusInfo.text : status
-}
+  const statusInfo = props.statusMap[status];
+  return statusInfo ? statusInfo.text : status;
+};
 
 // 初始化加载数据
 onMounted(() => {
-  loadData()
-})
+  loadData();
+});
 
 // 监听搜索条件变化
-watch(searchForm, () => {
-  // 搜索表单变化时延迟触发搜索，避免频繁请求
-  if (searchTimer) {
-    clearTimeout(searchTimer)
-  }
-  searchTimer = setTimeout(() => {
-    currentPage.value = 1
-    loadData()
-  }, 500)
-}, { deep: true })
+watch(
+  searchForm,
+  () => {
+    // 搜索表单变化时延迟触发搜索，避免频繁请求
+    if (searchTimer) {
+      clearTimeout(searchTimer);
+    }
+    searchTimer = setTimeout(() => {
+      currentPage.value = 1;
+      loadData();
+    }, 500);
+  },
+  { deep: true }
+);
 
 // 暴露方法给父组件
 defineExpose({
@@ -430,8 +438,8 @@ defineExpose({
   getSelection: () => selection.value,
   getCurrentPage: () => currentPage.value,
   getPageSize: () => pageSize.value,
-  getTotal: () => total.value
-})
+  getTotal: () => total.value,
+});
 </script>
 
 <style lang="scss" scoped>
@@ -442,61 +450,62 @@ defineExpose({
     border-radius: 4px;
     margin-bottom: 16px;
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
-    
+
     .el-form-item {
       margin-bottom: 12px;
       margin-right: 24px;
     }
-  
-  .app-form :deep(.el-form) {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    
-    .el-form-item {
-      margin-bottom: 12px;
-      margin-right: 24px;
-    }
-  
-    .form-actions {
-      margin-left: auto;
-      margin-bottom: 0;
-    }
-  }
 
-  .table-toolbar {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 16px;
-    padding: 16px;
-    background: #fff;
-    border-radius: 4px;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
-    
-    .toolbar-left {
+    .app-form :deep(.el-form) {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 8px;
+
+      .el-form-item {
+        margin-bottom: 12px;
+        margin-right: 24px;
+      }
+
+      .form-actions {
+        margin-left: auto;
+        margin-bottom: 0;
+      }
     }
-    
-    .toolbar-right {
+
+    .table-toolbar {
       display: flex;
-      align-items: center;
-      gap: 8px;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding: 16px;
+      background: #fff;
+      border-radius: 4px;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+
+      .toolbar-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .toolbar-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
     }
-  }
 
-  .el-table {
-    border-radius: 4px;
-  }
+    .el-table {
+      border-radius: 4px;
+    }
 
-  .table-pagination {
-    margin-top: 16px;
-    text-align: right;
-    padding: 16px;
-    background: #fff;
-    border-radius: 4px;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+    .table-pagination {
+      margin-top: 16px;
+      text-align: right;
+      padding: 16px;
+      background: #fff;
+      border-radius: 4px;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+    }
   }
 }
 </style>

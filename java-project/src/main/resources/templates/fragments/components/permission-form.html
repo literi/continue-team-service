@@ -1,0 +1,81 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="permissionForm">
+    <form id="permissionForm" onsubmit="savePermission(event)">
+        <input type="hidden" name="id" th:value="${permission?.id}" />
+        
+        <div class="form-group">
+            <label>租户ID <span style="color: red;">*</span></label>
+            <input type="text" name="tenantId" th:value="${permission?.tenantId}" required />
+        </div>
+
+        <div class="form-group">
+            <label>权限名称 <span style="color: red;">*</span></label>
+            <input type="text" name="permName" th:value="${permission?.permName}" required />
+        </div>
+
+        <div class="form-group">
+            <label>权限代码 <span style="color: red;">*</span></label>
+            <input type="text" name="permCode" th:value="${permission?.permCode}" required />
+        </div>
+
+        <div class="form-group">
+            <label>权限类型 <span style="color: red;">*</span></label>
+            <input type="number" name="permType" th:value="${permission?.permType}" required />
+            <small style="color: #999; display: block; margin-top: 4px;">1-菜单 2-按钮 3-接口</small>
+        </div>
+
+        <div class="form-group">
+            <label>资源路径</label>
+            <input type="text" name="resourcePath" th:value="${permission?.resourcePath}" />
+        </div>
+
+        <div class="form-group">
+            <label>请求方法</label>
+            <select name="method">
+                <option value="">请选择</option>
+                <option value="GET" th:selected="${permission?.method == 'GET'}">GET</option>
+                <option value="POST" th:selected="${permission?.method == 'POST'}">POST</option>
+                <option value="PUT" th:selected="${permission?.method == 'PUT'}">PUT</option>
+                <option value="DELETE" th:selected="${permission?.method == 'DELETE'}">DELETE</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>父级ID</label>
+            <input type="text" name="parentId" th:value="${permission?.parentId}" />
+        </div>
+
+        <div class="form-group">
+            <label>排序</label>
+            <input type="number" name="sort" th:value="${permission?.sort ?: 0}" />
+        </div>
+
+        <div class="form-group">
+            <label>状态</label>
+            <select name="status">
+                <option value="true" th:selected="${permission?.status == true}">启用</option>
+                <option value="false" th:selected="${permission?.status == false}">禁用</option>
+            </select>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn" onclick="closePermissionModal()">取消</button>
+            <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+    </form>
+
+    <script>
+        function savePermission(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            fetch('/admin/permission/save', {method: 'POST', body: formData})
+            .then(res => res.json())
+            .then(data => {
+                alert(data.success ? '保存成功' : '保存失败: ' + data.message);
+                if (data.success) {
+                    closePermissionModal();
+                    loadPermissionPage(1);
+                }
+            });
+        }
+    </script>
+</th:block>

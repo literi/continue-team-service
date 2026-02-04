@@ -1,0 +1,154 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="tenantList">
+    <div class="content-card">
+        <h2>租户管理</h2>
+        <p>管理系统租户信息。</p>
+        <button type="button" class="btn btn-primary" onclick="showAddTenantModal()">新增租户</button>
+
+        <div id="tenantTableContainer">
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>租户名称</th>
+                            <th>租户代码</th>
+                            <th>联系人</th>
+                            <th>联系电话</th>
+                            <th>状态</th>
+                            <th>过期时间</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="tenant : ${pageResult.content}">
+                            <td th:text="${tenant.tenantName}">-</td>
+                            <td th:text="${tenant.tenantCode}">-</td>
+                            <td th:text="${tenant.contactPerson ?: '-'}">-</td>
+                            <td th:text="${tenant.contactPhone ?: '-'}">-</td>
+                            <td>
+                                <span th:if="${tenant.status}" style="color: #52c41a;">启用</span>
+                                <span th:unless="${tenant.status}" style="color: #ff4d4f;">禁用</span>
+                            </td>
+                            <td th:text="${tenant.expireTime != null ? #temporals.format(tenant.expireTime, 'yyyy-MM-dd HH:mm') : '-'}">-</td>
+                            <td th:text="${#temporals.format(tenant.createTime, 'yyyy-MM-dd HH:mm')}">-</td>
+                            <td>
+                                <div class="actions">
+                                    <button type="button" class="btn btn-sm btn-edit" 
+                                            data-action="edit"
+                                            th:data-id="${tenant.id}">
+                                        编辑
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger btn-delete" 
+                                            data-action="delete"
+                                            th:data-id="${tenant.id}">
+                                        删除
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(pageResult.content)}">
+                            <td colspan="8" style="text-align: center; color: #999;">暂无数据</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination" th:if="${pageResult.totalPages > 0}">
+                <button type="button" class="btn btn-sm btn-page" 
+                        th:disabled="${pageResult.isFirst}"
+                        data-action="page"
+                        th:data-page="${pageResult.currentPage - 1}">
+                    上一页
+                </button>
+                <span class="page-info">
+                    第 <span th:text="${pageResult.currentPage}">1</span> 页 / 共 <span th:text="${pageResult.totalPages}">1</span> 页
+                    （共 <span th:text="${pageResult.totalElements}">0</span> 条）
+                </span>
+                <button type="button" class="btn btn-sm btn-page" 
+                        th:disabled="${pageResult.isLast}"
+                        data-action="page"
+                        th:data-page="${pageResult.currentPage + 1}">
+                    下一页
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tenantModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="tenantModalTitle">新增租户</h3>
+                <button type="button" class="modal-close" onclick="closeTenantModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="tenantFormContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        function loadTenantPage(page) {
+            htmx.ajax('GET', '/admin/tenant/list?page=' + page, {
+                target: '#contentContainer',
+                swap: 'innerHTML'
+            });
+        }
+
+        function showAddTenantModal() {
+            document.getElementById('tenantModalTitle').textContent = '新增租户';
+            htmx.ajax('GET', '/admin/tenant/add', {
+                target: '#tenantFormContainer',
+                swap: 'innerHTML',
+                onSuccess: function() {
+                    document.getElementById('tenantModal').classList.add('show');
+                }
+            });
+        }
+
+        function showEditTenantModal(id) {
+            document.getElementById('tenantModalTitle').textContent = '编辑租户';
+            htmx.ajax('GET', '/admin/tenant/edit/' + id, {
+                target: '#tenantFormContainer',
+                swap: 'innerHTML',
+                onSuccess: function() {
+                    document.getElementById('tenantModal').classList.add('show');
+                }
+            });
+        }
+
+        function closeTenantModal() {
+            document.getElementById('tenantModal').classList.remove('show');
+        }
+
+        function confirmDeleteTenant(id) {
+            if (confirm('确定要删除该租户吗？')) {
+                fetch('/admin/tenant/delete/' + id, {method: 'POST'})
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.success ? '删除成功' : '删除失败: ' + data.message);
+                    if (data.success) loadTenantPage(1);
+                });
+            }
+        }
+
+        document.getElementById('tenantModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeTenantModal();
+        });
+
+        // 事件委托：处理编辑、删除和分页按钮
+        document.getElementById('tenantTableContainer')?.addEventListener('click', function(e) {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            
+            const action = btn.getAttribute('data-action');
+            const id = btn.getAttribute('data-id');
+            const page = btn.getAttribute('data-page');
+            
+            if (action === 'edit' && id) {
+                showEditTenantModal(id);
+            } else if (action === 'delete' && id) {
+                confirmDeleteTenant(id);
+            } else if (action === 'page' && page) {
+                loadTenantPage(parseInt(page));
+            }
+        });
+    </script>
+</th:block>

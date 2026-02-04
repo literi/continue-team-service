@@ -1,0 +1,150 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="roleList">
+    <div class="content-card">
+        <h2>角色管理</h2>
+        <p>管理系统角色信息。</p>
+        <button type="button" class="btn btn-primary" onclick="showAddRoleModal()">新增角色</button>
+
+        <div id="roleTableContainer">
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>角色名称</th>
+                            <th>角色代码</th>
+                            <th>描述</th>
+                            <th>状态</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="role : ${pageResult.content}">
+                            <td th:text="${role.roleName}">-</td>
+                            <td th:text="${role.roleCode}">-</td>
+                            <td th:text="${role.description ?: '-'}">-</td>
+                            <td>
+                                <span th:if="${role.status}" style="color: #52c41a;">启用</span>
+                                <span th:unless="${role.status}" style="color: #ff4d4f;">禁用</span>
+                            </td>
+                            <td th:text="${#temporals.format(role.createTime, 'yyyy-MM-dd HH:mm')}">-</td>
+                            <td>
+                                <div class="actions">
+                                    <button type="button" class="btn btn-sm btn-edit" 
+                                            data-action="edit"
+                                            th:data-id="${role.id}">
+                                        编辑
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger btn-delete" 
+                                            data-action="delete"
+                                            th:data-id="${role.id}">
+                                        删除
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(pageResult.content)}">
+                            <td colspan="6" style="text-align: center; color: #999;">暂无数据</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination" th:if="${pageResult.totalPages > 0}">
+                <button type="button" class="btn btn-sm btn-page" 
+                        th:disabled="${pageResult.isFirst}"
+                        data-action="page"
+                        th:data-page="${pageResult.currentPage - 1}">
+                    上一页
+                </button>
+                <span class="page-info">
+                    第 <span th:text="${pageResult.currentPage}">1</span> 页 / 共 <span th:text="${pageResult.totalPages}">1</span> 页
+                    （共 <span th:text="${pageResult.totalElements}">0</span> 条）
+                </span>
+                <button type="button" class="btn btn-sm btn-page" 
+                        th:disabled="${pageResult.isLast}"
+                        data-action="page"
+                        th:data-page="${pageResult.currentPage + 1}">
+                    下一页
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="roleModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="roleModalTitle">新增角色</h3>
+                <button type="button" class="modal-close" onclick="closeRoleModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="roleFormContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        function loadRolePage(page) {
+            htmx.ajax('GET', '/admin/role/list?page=' + page, {
+                target: '#contentContainer',
+                swap: 'innerHTML'
+            });
+        }
+
+        function showAddRoleModal() {
+            document.getElementById('roleModalTitle').textContent = '新增角色';
+            htmx.ajax('GET', '/admin/role/add', {
+                target: '#roleFormContainer',
+                swap: 'innerHTML',
+                onSuccess: function() {
+                    document.getElementById('roleModal').classList.add('show');
+                }
+            });
+        }
+
+        function showEditRoleModal(id) {
+            document.getElementById('roleModalTitle').textContent = '编辑角色';
+            htmx.ajax('GET', '/admin/role/edit/' + id, {
+                target: '#roleFormContainer',
+                swap: 'innerHTML',
+                onSuccess: function() {
+                    document.getElementById('roleModal').classList.add('show');
+                }
+            });
+        }
+
+        function closeRoleModal() {
+            document.getElementById('roleModal').classList.remove('show');
+        }
+
+        function confirmDeleteRole(id) {
+            if (confirm('确定要删除该角色吗？')) {
+                fetch('/admin/role/delete/' + id, {method: 'POST'})
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.success ? '删除成功' : '删除失败: ' + data.message);
+                    if (data.success) loadRolePage(1);
+                });
+            }
+        }
+
+        document.getElementById('roleModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeRoleModal();
+        });
+
+        // 事件委托：处理编辑、删除和分页按钮
+        document.getElementById('roleTableContainer')?.addEventListener('click', function(e) {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            
+            const action = btn.getAttribute('data-action');
+            const id = btn.getAttribute('data-id');
+            const page = btn.getAttribute('data-page');
+            
+            if (action === 'edit' && id) {
+                showEditRoleModal(id);
+            } else if (action === 'delete' && id) {
+                confirmDeleteRole(id);
+            } else if (action === 'page' && page) {
+                loadRolePage(parseInt(page));
+            }
+        });
+    </script>
+</th:block>

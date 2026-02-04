@@ -1,0 +1,29 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="userManage">
+    <div class="content-card">
+        <h2>用户管理</h2>
+        <p>管理系统用户账号与权限。</p>
+        <button type="button" class="btn btn-primary">新增用户</button>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>用户名</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="user : ${userList}">
+                        <td th:text="${user}">-</td>
+                        <td>
+                            <div class="actions">
+                                <button type="button" class="btn" th:disabled="${user != null and (user.contains('admin') or user.contains('Admin'))}">编辑</button>
+                                <button type="button" class="btn btn-danger" th:disabled="${user != null and (user.contains('admin') or user.contains('Admin'))}">删除</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</th:block>

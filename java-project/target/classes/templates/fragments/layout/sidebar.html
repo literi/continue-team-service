@@ -1,0 +1,74 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="sidebar(sidebarCollapsed)">
+    <!-- 根据折叠状态添加 collapsed 类 -->
+    <div class="sidebar" th:classappend="${sidebarCollapsed} ? 'collapsed' : ''">
+        <!-- 侧边栏头部 -->
+        <div class="sidebar-header">
+            <h3>后台管理系统</h3>
+        </div>
+
+        <!-- 导航菜单 -->
+        <ul class="menu-list">
+            <!-- 仪表盘菜单：点击加载仪表盘内容 -->
+            <li class="menu-item">
+                <a class="menu-link active" 
+                   hx-get="/admin/load-content/dashboard"
+                   hx-target="#contentContainer"
+                   hx-swap="innerHTML"
+                   hx-on::click="document.querySelectorAll('.menu-link').forEach(el => el.classList.remove('active')); this.classList.add('active');">
+                    <span class="menu-icon">📊</span>
+                    <span class="menu-text">仪表盘</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a class="menu-link" 
+                   hx-get="/admin/user/list"
+                   hx-target="#contentContainer"
+                   hx-swap="innerHTML"
+                   hx-on::click="document.querySelectorAll('.menu-link').forEach(el => el.classList.remove('active')); this.classList.add('active');">
+                    <span class="menu-icon">👥</span>
+                    <span class="menu-text">用户管理</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a class="menu-link" 
+                   hx-get="/admin/role/list"
+                   hx-target="#contentContainer"
+                   hx-swap="innerHTML"
+                   hx-on::click="document.querySelectorAll('.menu-link').forEach(el => el.classList.remove('active')); this.classList.add('active');">
+                    <span class="menu-icon">🎭</span>
+                    <span class="menu-text">角色管理</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a class="menu-link" 
+                   hx-get="/admin/permission/list"
+                   hx-target="#contentContainer"
+                   hx-swap="innerHTML"
+                   hx-on::click="document.querySelectorAll('.menu-link').forEach(el => el.classList.remove('active')); this.classList.add('active');">
+                    <span class="menu-icon">🔐</span>
+                    <span class="menu-text">权限管理</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a class="menu-link" 
+                   hx-get="/admin/tenant/list"
+                   hx-target="#contentContainer"
+                   hx-swap="innerHTML"
+                   hx-on::click="document.querySelectorAll('.menu-link').forEach(el => el.classList.remove('active')); this.classList.add('active');">
+                    <span class="menu-icon">🏢</span>
+                    <span class="menu-text">租户管理</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a class="menu-link" 
+                   hx-get="/admin/load-content/setting"
+                   hx-target="#contentContainer"
+                   hx-swap="innerHTML"
+                   hx-on::click="document.querySelectorAll('.menu-link').forEach(el => el.classList.remove('active')); this.classList.add('active');">
+                    <span class="menu-icon">⚙️</span>
+                    <span class="menu-text">系统设置</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+</th:block>

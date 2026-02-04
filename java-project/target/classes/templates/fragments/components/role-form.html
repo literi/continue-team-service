@@ -1,0 +1,54 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="roleForm">
+    <form id="roleForm" onsubmit="saveRole(event)">
+        <input type="hidden" name="id" th:value="${role?.id}" />
+        
+        <div class="form-group">
+            <label>租户ID <span style="color: red;">*</span></label>
+            <input type="text" name="tenantId" th:value="${role?.tenantId}" required />
+        </div>
+
+        <div class="form-group">
+            <label>角色名称 <span style="color: red;">*</span></label>
+            <input type="text" name="roleName" th:value="${role?.roleName}" required />
+        </div>
+
+        <div class="form-group">
+            <label>角色代码 <span style="color: red;">*</span></label>
+            <input type="text" name="roleCode" th:value="${role?.roleCode}" required />
+        </div>
+
+        <div class="form-group">
+            <label>描述</label>
+            <textarea name="description" style="width: 100%; max-width: 320px; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: var(--radius); min-height: 80px;" th:text="${role?.description}"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>状态</label>
+            <select name="status">
+                <option value="true" th:selected="${role?.status == true}">启用</option>
+                <option value="false" th:selected="${role?.status == false}">禁用</option>
+            </select>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn" onclick="closeRoleModal()">取消</button>
+            <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+    </form>
+
+    <script>
+        function saveRole(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            fetch('/admin/role/save', {method: 'POST', body: formData})
+            .then(res => res.json())
+            .then(data => {
+                alert(data.success ? '保存成功' : '保存失败: ' + data.message);
+                if (data.success) {
+                    closeRoleModal();
+                    loadRolePage(1);
+                }
+            });
+        }
+    </script>
+</th:block>

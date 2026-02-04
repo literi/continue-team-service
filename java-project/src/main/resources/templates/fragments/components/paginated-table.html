@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="paginated-table(pageResult, tableId, columns, editUrl, deleteUrl)">
+    <!-- 
+    使用说明：
+    pageResult: PageResult对象，包含分页数据
+    tableId: 表格ID（用于HTMX替换）
+    columns: 列配置，格式：[{field: 'username', label: '用户名'}, ...]
+    editUrl: 编辑URL模板，如 '/admin/user/edit/{id}'
+    deleteUrl: 删除URL模板，如 '/admin/user/delete/{id}'
+    -->
+    
+    <div class="table-wrap">
+        <table class="table" th:id="${tableId}">
+            <thead>
+                <tr>
+                    <th th:each="col : ${columns}" th:text="${col.label}">列名</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="item : ${pageResult.content}">
+                    <td th:each="col : ${columns}" th:text="${item[col.field]}">数据</td>
+                    <td>
+                        <div class="actions">
+                            <button type="button" class="btn btn-sm btn-edit" 
+                                    data-action="edit"
+                                    th:data-id="${item.id}">
+                                编辑
+                            </button>
+                            <button type="button" class="btn btn-sm btn-danger btn-delete" 
+                                    data-action="delete"
+                                    th:data-id="${item.id}">
+                                删除
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(pageResult.content)}">
+                    <td th:colspan="${#lists.size(columns) + 1}" style="text-align: center; color: #999;">
+                        暂无数据
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 分页控件 -->
+    <div class="pagination" th:if="${pageResult.totalPages > 0}">
+        <button type="button" class="btn btn-sm btn-page" 
+                th:disabled="${pageResult.isFirst}"
+                data-action="page"
+                th:data-page="${pageResult.currentPage - 1}">
+            上一页
+        </button>
+        <span class="page-info">
+            第 <span th:text="${pageResult.currentPage}">1</span> 页 / 共 <span th:text="${pageResult.totalPages}">1</span> 页
+            （共 <span th:text="${pageResult.totalElements}">0</span> 条）
+        </span>
+        <button type="button" class="btn btn-sm btn-page" 
+                th:disabled="${pageResult.isLast}"
+                data-action="page"
+                th:data-page="${pageResult.currentPage + 1}">
+            下一页
+        </button>
+    </div>
+</th:block>
+</html>

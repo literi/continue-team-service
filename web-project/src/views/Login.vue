@@ -58,7 +58,17 @@
             :loading="loading"
             @click="handleLogin"
           >
-            登录
+            传统登录
+          </el-button>
+        </el-form-item>
+        <el-form-item>
+          <el-button
+            type="default"
+            size="large"
+            class="login-button"
+            @click="handleOAuthLogin"
+          >
+            OAuth 2.1 + PKCE 登录
           </el-button>
         </el-form-item>
       </el-form>
@@ -120,9 +130,57 @@ const loginForm = reactive({
   uuid: "",
 });
 
+// OAuth2.1 + PKCE 相关变量
+const codeVerifier = ref("");
+const codeChallenge = ref("");
+
 onMounted(() => {
   refreshCaptcha();
 });
+
+// 生成随机字符串作为 code_verifier
+const generateRandomString = (length: number) => {
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(36)).join('').substring(0, length);
+};
+
+// 生成 SHA256 哈希的 base64url 编码
+const generateCodeChallenge = async (verifier: string) => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(verifier);
+  const hashed = await crypto.subtle.digest('SHA-256', data);
+  
+  // Base64 URL 编码
+  return btoa(String.fromCharCode(...new Uint8Array(hashed)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+};
+
+// 初始化 PKCE 参数
+const initPKCE = async () => {
+  codeVerifier.value = generateRandomString(64);
+  codeChallenge.value = await generateCodeChallenge(codeVerifier.value);
+};
+
+// OAuth2.1 PKCE 登录
+const handleOAuthLogin = async () => {
+  await initPKCE();
+  
+  const clientId = "my-client-id"; // 从配置中获取
+  const redirectUri = encodeURIComponent(window.location.origin + "/callback");
+  const state = generateRandomString(16);
+  const scope = "read write";
+  
+  // 保存 state 到 sessionStorage 用于后续验证
+  sessionStorage.setItem("oauth_state", state);
+  sessionStorage.setItem("code_verifier", codeVerifier.value);
+  
+  const authUrl = `/oauth2/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}&scope=${scope}&code_challenge=${codeChallenge.value}&code_challenge_method=S256`;
+  
+  window.location.href = authUrl;
+};
 
 const refreshCaptcha = () => {
   getCaptcha().then((res) => {
@@ -146,15 +204,53 @@ const handleLogin = async () => {
     if (valid) {
       loading.value = true;
       try {
-        // sessionStorage.setItem('token', '123456')
+        // 传统登录方式（保留向后兼容）
         userLogin({
           username: loginForm.username,
           password: loginForm.password,
           captcha: loginForm.captcha,
           uuid: loginForm.uuid,
         }).then((res) => {
-          sessionStorage.setItem("token", `${res.data.type} ${res.data.token}`);
-          router.push('/dashboard')
+          // 检查响应数据是否存在
+          if (!res || !res.data) {
+            ElMessage.error('登录响应数据异常');
+            return;
+          }
+          
+          // 存储访问令牌和刷新令牌
+          if (res.data.accessToken) {
+            const accessToken = `${res.data.tokenType || 'Bearer'} ${res.data.accessToken}`;
+            const refreshToken = res.data.refreshToken;
+            
+            sessionStorage.setItem("access_token", accessToken);
+            if (refreshToken) {
+              sessionStorage.setItem("refresh_token", refreshToken);
+            }
+            
+            // 设置访问令牌过期时间（15分钟）
+            const now = Date.now();
+            sessionStorage.setItem("access_token_expires_at", (now + 15 * 60 * 1000).toString());
+            
+            // 如果有刷新令牌，设置其过期时间（24小时）
+            if (refreshToken) {
+              sessionStorage.setItem("refresh_token_expires_at", (now + 24 * 60 * 60 * 1000).toString());
+            }
+          } else {
+            // 兼容旧的 token 格式
+            if (res.data.type && res.data.token) {
+              sessionStorage.setItem("token", `${res.data.type} ${res.data.token}`);
+            } else {
+              // 如果既没有新的也没有旧的token格式，提示错误
+              ElMessage.error('登录响应缺少令牌信息');
+              return;
+            }
+          }
+          
+          router.push('/dashboard');
+        }).catch((err) => {
+          console.error('Login error:', err);
+          const message = err.response?.data?.message || '登录失败，请检查用户名和密码';
+          ElMessage.error(message);
         });
       } catch (error: any) {
         console.error("Login failed:", error);
