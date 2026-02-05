@@ -1,0 +1,16 @@
+{
+  "folders": [
+    {
+      "path": "./java-project" // 相对路径（相对于 .code-workspace 文件）
+    },
+    {
+      "path": "./trans-openapi" // 绝对路径也可（比如 "D:/projects/backend"）
+    }
+  ],
+  "settings": {
+    // 工作空间专属设置（会覆盖全局设置）
+    "editor.tabSize": 2,
+    "editor.formatOnSave": true,
+    "files.autoSave": "onFocusChange"
+  }
+}

@@ -97,10 +97,9 @@
             htmx.ajax('GET', '/admin/tenant/add', {
                 target: '#tenantFormContainer',
                 swap: 'innerHTML',
-                onSuccess: function() {
-                    document.getElementById('tenantModal').classList.add('show');
-                }
-            });
+            }).then(function(){
+                document.getElementById('tenantModal').classList.add('show');
+            })
         }
 
         function showEditTenantModal(id) {
@@ -108,10 +107,9 @@
             htmx.ajax('GET', '/admin/tenant/edit/' + id, {
                 target: '#tenantFormContainer',
                 swap: 'innerHTML',
-                onSuccess: function() {
-                    document.getElementById('tenantModal').classList.add('show');
-                }
-            });
+            }).then(function(){
+                document.getElementById('tenantModal').classList.add('show');
+            })
         }
 
         function closeTenantModal() {

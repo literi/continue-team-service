@@ -97,10 +97,9 @@
             htmx.ajax('GET', '/admin/permission/add', {
                 target: '#permissionFormContainer',
                 swap: 'innerHTML',
-                onSuccess: function() {
-                    document.getElementById('permissionModal').classList.add('show');
-                }
-            });
+            }).then(function(){
+                document.getElementById('permissionModal').classList.add('show');
+            })
         }
 
         function showEditPermissionModal(id) {
@@ -108,9 +107,8 @@
             htmx.ajax('GET', '/admin/permission/edit/' + id, {
                 target: '#permissionFormContainer',
                 swap: 'innerHTML',
-                onSuccess: function() {
-                    document.getElementById('permissionModal').classList.add('show');
-                }
+            }).then(function() {
+                document.getElementById('permissionModal').classList.add('show');
             });
         }
 

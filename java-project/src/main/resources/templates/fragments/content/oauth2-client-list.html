@@ -1,0 +1,152 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="clientList">
+    <div class="content-card">
+        <h2>OAuth2 客户端管理</h2>
+        <p>管理 OAuth2 客户端注册信息。</p>
+        <button type="button" class="btn btn-primary" onclick="showAddClientModal()">新增客户端</button>
+
+        <div id="clientTableContainer">
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>客户端ID</th>
+                            <th>客户端名称</th>
+                            <th>授权类型</th>
+                            <th>重定向URI</th>
+                            <th>作用域</th>
+                            <th>状态</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="client : ${pageResult.content}">
+                            <td th:text="${client.clientId}">-</td>
+                            <td th:text="${client.clientName}">-</td>
+                            <td th:text="${client.authorizationGrantTypes}">-</td>
+                            <td th:text="${client.redirectUris ?: '-'}">-</td>
+                            <td th:text="${client.scopes}">-</td>
+                            <td>
+                                <span th:if="${client.status}" style="color: #52c41a;">启用</span>
+                                <span th:unless="${client.status}" style="color: #ff4d4f;">禁用</span>
+                            </td>
+                            <td th:text="${#temporals.format(client.createTime, 'yyyy-MM-dd HH:mm')}">-</td>
+                            <td>
+                                <div class="actions">
+                                    <button type="button" class="btn btn-sm btn-edit" 
+                                            data-action="edit"
+                                            th:data-id="${client.id}">
+                                        编辑
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger btn-delete" 
+                                            data-action="delete"
+                                            th:data-id="${client.id}">
+                                        删除
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(pageResult.content)}">
+                            <td colspan="8" style="text-align: center; color: #999;">暂无数据</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination" th:if="${pageResult.totalPages > 0}">
+                <button type="button" class="btn btn-sm btn-page" 
+                        th:disabled="${pageResult.isFirst}"
+                        data-action="page"
+                        th:data-page="${pageResult.currentPage - 1}">
+                    上一页
+                </button>
+                <span class="page-info">
+                    第 <span th:text="${pageResult.currentPage}">1</span> 页 / 共 <span th:text="${pageResult.totalPages}">1</span> 页
+                    （共 <span th:text="${pageResult.totalElements}">0</span> 条）
+                </span>
+                <button type="button" class="btn btn-sm btn-page" 
+                        th:disabled="${pageResult.isLast}"
+                        data-action="page"
+                        th:data-page="${pageResult.currentPage + 1}">
+                    下一页
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="clientModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="clientModalTitle">新增客户端</h3>
+                <button type="button" class="modal-close" onclick="closeClientModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="clientFormContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        function loadClientPage(page) {
+            htmx.ajax('GET', '/admin/oauth2/client/list?page=' + page, {
+                target: '#contentContainer',
+                swap: 'innerHTML'
+            });
+        }
+
+        function showAddClientModal() {
+            document.getElementById('clientModalTitle').textContent = '新增客户端';
+            htmx.ajax('GET', '/admin/oauth2/client/add', {
+                target: '#clientFormContainer',
+                swap: 'innerHTML',
+            }).then(function() {
+                document.getElementById('clientModal').classList.add('show');
+            });
+        }
+
+        function showEditClientModal(id) {
+            document.getElementById('clientModalTitle').textContent = '编辑客户端';
+            htmx.ajax('GET', '/admin/oauth2/client/edit/' + id, {
+                target: '#clientFormContainer',
+                swap: 'innerHTML',
+            }).then(function() {
+                document.getElementById('clientModal').classList.add('show');
+            });
+        }
+
+        function closeClientModal() {
+            document.getElementById('clientModal').classList.remove('show');
+        }
+
+        function confirmDeleteClient(id) {
+            if (confirm('确定要删除该客户端吗？')) {
+                fetch('/admin/oauth2/client/delete/' + id, {method: 'POST'})
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.success ? '删除成功' : '删除失败: ' + data.message);
+                    if (data.success) loadClientPage(1);
+                });
+            }
+        }
+
+        document.getElementById('clientModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeClientModal();
+        });
+
+        // 事件委托：处理编辑、删除和分页按钮
+        document.getElementById('clientTableContainer')?.addEventListener('click', function(e) {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            
+            const action = btn.getAttribute('data-action');
+            const id = btn.getAttribute('data-id');
+            const page = btn.getAttribute('data-page');
+            
+            if (action === 'edit' && id) {
+                showEditClientModal(id);
+            } else if (action === 'delete' && id) {
+                confirmDeleteClient(id);
+            } else if (action === 'page' && page) {
+                loadClientPage(parseInt(page));
+            }
+        });
+    </script>
+</th:block>

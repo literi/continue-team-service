@@ -229,7 +229,7 @@ body {
   color: #333;
 }
 
-.content-card > p {
+.content-card>p {
   color: #666;
   margin-bottom: 20px;
 }
@@ -250,8 +250,13 @@ body {
   border-left: 4px solid var(--primary);
 }
 
-.stats-card:nth-child(2) { border-left-color: #52c41a; }
-.stats-card:nth-child(3) { border-left-color: #faad14; }
+.stats-card:nth-child(2) {
+  border-left-color: #52c41a;
+}
+
+.stats-card:nth-child(3) {
+  border-left-color: #faad14;
+}
 
 .stats-name {
   font-size: 14px;
@@ -266,7 +271,7 @@ body {
   margin-bottom: 4px;
 }
 
-.stats-card > div:last-child {
+.stats-card>div:last-child {
   font-size: 12px;
   color: #52c41a;
 }

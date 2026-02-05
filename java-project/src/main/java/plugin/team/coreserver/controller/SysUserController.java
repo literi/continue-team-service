@@ -1,8 +1,6 @@
 package plugin.team.coreserver.controller;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Controller;
@@ -36,18 +34,6 @@ public class SysUserController {
                       Model model) {
         PageResult<SysUserDTO> pageResult = userService.list(page, size);
         model.addAttribute("pageResult", pageResult);
-        
-        // 表格列配置
-        List<Map<String, String>> columns = Arrays.asList(
-            createColumn("username", "用户名"),
-            createColumn("nickname", "昵称"),
-            createColumn("phone", "手机号"),
-            createColumn("email", "邮箱"),
-            createColumn("status", "状态"),
-            createColumn("createTime", "创建时间")
-        );
-        model.addAttribute("columns", columns);
-        
         return "fragments/content/user-list :: userList";
     }
 
@@ -66,8 +52,9 @@ public class SysUserController {
 
     @PostMapping("/save")
     @ResponseBody
-    public Map<String, Object> save(@ModelAttribute SysUser user,
-                                   @RequestParam(required = false) String status) {
+    public Map<String, Object> save(@ModelAttribute SysUserDTO user,
+                                   @RequestParam(required = false) String status,
+                                   @RequestParam(required = false) String password) {
         Map<String, Object> result = new HashMap<>();
         try {
             // 处理status字段的字符串到Boolean转换
@@ -75,13 +62,38 @@ public class SysUserController {
                 user.setStatus("true".equals(status) || Boolean.parseBoolean(status));
             }
             
-            if (user.getId() == null || user.getId().isEmpty()) {
-                userService.create(user);
-            } else {
-                userService.update(user.getId(), user);
+            SysUser userInfo = new SysUser();
+            userInfo.setId(user.getId());
+            userInfo.setUsername(user.getUsername());
+            userInfo.setNickname(user.getNickname());
+            userInfo.setPhone(user.getPhone());
+            userInfo.setEmail(user.getEmail());
+            userInfo.setStatus(user.getStatus());
+            userInfo.setTenantId(user.getTenantId());
+            
+            // 处理密码字段
+            if (password != null && !password.isEmpty()) {
+                userInfo.setPassword(password);
             }
+            
+            if (user.getId() == null || user.getId().isEmpty()) {
+                // 新增：密码必填
+                if (password == null || password.isEmpty()) {
+                    result.put("success", false);
+                    result.put("message", "保存失败: 新增用户时密码不能为空");
+                    return result;
+                }
+                userService.create(userInfo);
+            } else {
+                // 更新：密码可选
+                userService.update(user.getId(), userInfo);
+            }
+            
             result.put("success", true);
             result.put("message", "保存成功");
+            result.put("closeModal", true);
+            result.put("refreshTarget", "#contentContainer");
+            result.put("refreshUrl", "/admin/user/list?page=1");
         } catch (Exception e) {
             result.put("success", false);
             result.put("message", "保存失败: " + e.getMessage());
@@ -97,17 +109,12 @@ public class SysUserController {
             userService.delete(id);
             result.put("success", true);
             result.put("message", "删除成功");
+            result.put("refreshTarget", "#contentContainer");
+            result.put("refreshUrl", "/admin/user/list?page=1");
         } catch (Exception e) {
             result.put("success", false);
             result.put("message", "删除失败: " + e.getMessage());
         }
         return result;
-    }
-
-    private Map<String, String> createColumn(String field, String label) {
-        Map<String, String> col = new HashMap<>();
-        col.put("field", field);
-        col.put("label", label);
-        return col;
     }
 }

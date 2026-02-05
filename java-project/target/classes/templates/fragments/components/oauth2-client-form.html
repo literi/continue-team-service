@@ -1,0 +1,97 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="clientForm">
+    <form id="clientForm" 
+          hx-post="/admin/oauth2/client/save"
+          hx-target="#pageMessage"
+          hx-swap="innerHTML"
+          hx-headers='{"Content-Type": "application/x-www-form-urlencoded"}'>
+        <input type="hidden" name="id" th:value="${client?.id}" />
+        
+        <div class="form-group">
+            <label>租户ID <span style="color: red;">*</span></label>
+            <input type="text" name="tenantId" th:value="${client?.tenantId ?: 'default'}" required />
+        </div>
+
+        <div class="form-group">
+            <label>客户端ID <span style="color: red;">*</span></label>
+            <input type="text" name="clientId" th:value="${client?.clientId}" required />
+            <small style="color: #999; display: block; margin-top: 4px;">唯一标识客户端的ID</small>
+        </div>
+
+        <div class="form-group">
+            <label>客户端密钥</label>
+            <input type="text" name="clientSecret" th:value="${client?.clientSecret}" />
+            <small style="color: #999; display: block; margin-top: 4px;">留空则不修改</small>
+        </div>
+
+        <div class="form-group">
+            <label>客户端名称 <span style="color: red;">*</span></label>
+            <input type="text" name="clientName" th:value="${client?.clientName}" required />
+        </div>
+
+        <div class="form-group">
+            <label>客户端认证方法 <span style="color: red;">*</span></label>
+            <input type="text" name="clientAuthenticationMethods" 
+                   th:value="${client?.clientAuthenticationMethods ?: 'client_secret_basic'}" 
+                   placeholder="client_secret_basic,client_secret_post" required />
+            <small style="color: #999; display: block; margin-top: 4px;">多个用逗号分隔，如：client_secret_basic,client_secret_post</small>
+        </div>
+
+        <div class="form-group">
+            <label>授权类型 <span style="color: red;">*</span></label>
+            <input type="text" name="authorizationGrantTypes" 
+                   th:value="${client?.authorizationGrantTypes ?: 'authorization_code,refresh_token'}" 
+                   placeholder="authorization_code,refresh_token" required />
+            <small style="color: #999; display: block; margin-top: 4px;">多个用逗号分隔，如：authorization_code,refresh_token</small>
+        </div>
+
+        <div class="form-group">
+            <label>重定向URI</label>
+            <input type="text" name="redirectUris" th:value="${client?.redirectUris}" 
+                   placeholder="http://localhost:3000/callback" />
+            <small style="color: #999; display: block; margin-top: 4px;">多个用逗号分隔</small>
+        </div>
+
+        <div class="form-group">
+            <label>登出重定向URI</label>
+            <input type="text" name="postLogoutRedirectUris" th:value="${client?.postLogoutRedirectUris}" />
+            <small style="color: #999; display: block; margin-top: 4px;">多个用逗号分隔</small>
+        </div>
+
+        <div class="form-group">
+            <label>作用域 <span style="color: red;">*</span></label>
+            <input type="text" name="scopes" 
+                   th:value="${client?.scopes ?: 'openid,profile,email'}" 
+                   placeholder="openid,profile,email" required />
+            <small style="color: #999; display: block; margin-top: 4px;">多个用逗号分隔</small>
+        </div>
+
+        <div class="form-group">
+            <label>客户端设置（JSON）</label>
+            <textarea name="clientSettings" style="width: 100%; max-width: 320px; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: var(--radius); min-height: 80px;">
+                <th:block th:if="${client?.clientSettings != null and !#strings.isEmpty(client.clientSettings)}" th:text="${client.clientSettings}"></th:block>
+                <th:block th:unless="${client?.clientSettings != null and !#strings.isEmpty(client.clientSettings)}">{}</th:block>
+            </textarea>
+        </div>
+
+        <div class="form-group">
+            <label>令牌设置（JSON）</label>
+            <textarea name="tokenSettings" style="width: 100%; max-width: 320px; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: var(--radius); min-height: 80px;">
+                <th:block th:if="${client?.tokenSettings != null and !#strings.isEmpty(client.tokenSettings)}" th:text="${client.tokenSettings}"></th:block>
+                <th:block th:unless="${client?.tokenSettings != null and !#strings.isEmpty(client.tokenSettings)}">{"accessTokenTimeToLive":3600,"refreshTokenTimeToLive":86400}</th:block>
+            </textarea>
+        </div>
+
+        <div class="form-group">
+            <label>状态</label>
+            <select name="status">
+                <option value="true" th:selected="${client?.status == true}">启用</option>
+                <option value="false" th:selected="${client?.status == false}">禁用</option>
+            </select>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn" onclick="closeClientModal()">取消</button>
+            <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+    </form>
+</th:block>

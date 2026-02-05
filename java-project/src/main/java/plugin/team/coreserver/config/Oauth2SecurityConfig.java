@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 import plugin.team.coreserver.domain.SysUser;
+import plugin.team.coreserver.interceptor.HtmxRedirectInterceptor;
 import plugin.team.coreserver.repository.SysUserRepository;
 
 @Configuration
@@ -25,20 +26,28 @@ public class Oauth2SecurityConfig {
     @Autowired
     private SysUserRepository userRepository;
 
+    @Autowired
+    private HtmxRedirectInterceptor htmxRedirectInterceptor;
+
 
     @Bean
+    @org.springframework.core.annotation.Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(AbstractHttpConfigurer::disable) .exceptionHandling(exception -> exception
-                .authenticationEntryPoint((request, response, authException) -> {
-                    response.sendRedirect("/login");
-                })
-        ).authorizeHttpRequests(registry -> registry
+        http.csrf(AbstractHttpConfigurer::disable) 
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(htmxRedirectInterceptor)
+                )
+                .authorizeHttpRequests(registry -> registry
+                        // 放行 OAuth2 端点（由 AuthorizationServerSecurityFilterChain 处理）
+                        .requestMatchers("/oauth2/**", "/.well-known/**").permitAll()
                         // 放行登录相关请求
-                        .requestMatchers("/login", "/doLogin", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/login", "/doLogin", "/css/**", "/js/**", "/favicon.ico").permitAll()
+                        // API 端点由 ResourceServerSecurityFilterChain 处理
+                        .requestMatchers("/api/**").permitAll() // 实际由 ResourceServer 保护
                         // 其他所有请求需要认证
                         .anyRequest().authenticated()
                 )
-                // 表单登录配置（写法不变，6.1+ 仍支持）
+                // 表单登录配置
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/doLogin")

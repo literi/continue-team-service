@@ -7,64 +7,67 @@
         </div>
 
         <!-- 导航菜单 -->
-        <ul class="menu-list">
-            <!-- 仪表盘菜单：点击加载仪表盘内容 -->
+        <ul class="menu-list" id="sidebarMenu">
+            <!-- 仪表盘菜单 -->
             <li class="menu-item">
-                <a class="menu-link active" 
-                   hx-get="/admin/load-content/dashboard"
-                   hx-target="#contentContainer"
-                   hx-swap="innerHTML"
-                   hx-on::click="document.querySelectorAll('.menu-link').forEach(el => el.classList.remove('active')); this.classList.add('active');">
+                <a class="menu-link" 
+                   href="#/admin/load-content/dashboard"
+                   data-url="/admin/load-content/dashboard"
+                   data-hash="#/admin/load-content/dashboard">
                     <span class="menu-icon">📊</span>
                     <span class="menu-text">仪表盘</span>
                 </a>
             </li>
             <li class="menu-item">
                 <a class="menu-link" 
-                   hx-get="/admin/user/list"
-                   hx-target="#contentContainer"
-                   hx-swap="innerHTML"
-                   hx-on::click="document.querySelectorAll('.menu-link').forEach(el => el.classList.remove('active')); this.classList.add('active');">
+                   href="#/admin/user/list"
+                   data-url="/admin/user/list"
+                   data-hash="#/admin/user/list">
                     <span class="menu-icon">👥</span>
                     <span class="menu-text">用户管理</span>
                 </a>
             </li>
             <li class="menu-item">
                 <a class="menu-link" 
-                   hx-get="/admin/role/list"
-                   hx-target="#contentContainer"
-                   hx-swap="innerHTML"
-                   hx-on::click="document.querySelectorAll('.menu-link').forEach(el => el.classList.remove('active')); this.classList.add('active');">
+                   href="#/admin/role/list"
+                   data-url="/admin/role/list"
+                   data-hash="#/admin/role/list">
                     <span class="menu-icon">🎭</span>
                     <span class="menu-text">角色管理</span>
                 </a>
             </li>
             <li class="menu-item">
                 <a class="menu-link" 
-                   hx-get="/admin/permission/list"
-                   hx-target="#contentContainer"
-                   hx-swap="innerHTML"
-                   hx-on::click="document.querySelectorAll('.menu-link').forEach(el => el.classList.remove('active')); this.classList.add('active');">
+                   href="#/admin/permission/list"
+                   data-url="/admin/permission/list"
+                   data-hash="#/admin/permission/list">
                     <span class="menu-icon">🔐</span>
                     <span class="menu-text">权限管理</span>
                 </a>
             </li>
             <li class="menu-item">
                 <a class="menu-link" 
-                   hx-get="/admin/tenant/list"
-                   hx-target="#contentContainer"
-                   hx-swap="innerHTML"
-                   hx-on::click="document.querySelectorAll('.menu-link').forEach(el => el.classList.remove('active')); this.classList.add('active');">
+                   href="#/admin/tenant/list"
+                   data-url="/admin/tenant/list"
+                   data-hash="#/admin/tenant/list">
                     <span class="menu-icon">🏢</span>
                     <span class="menu-text">租户管理</span>
                 </a>
             </li>
             <li class="menu-item">
                 <a class="menu-link" 
-                   hx-get="/admin/load-content/setting"
-                   hx-target="#contentContainer"
-                   hx-swap="innerHTML"
-                   hx-on::click="document.querySelectorAll('.menu-link').forEach(el => el.classList.remove('active')); this.classList.add('active');">
+                   href="#/admin/oauth2/client/list"
+                   data-url="/admin/oauth2/client/list"
+                   data-hash="#/admin/oauth2/client/list">
+                    <span class="menu-icon">🔑</span>
+                    <span class="menu-text">OAuth2客户端</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a class="menu-link" 
+                   href="#/admin/load-content/setting"
+                   data-url="/admin/load-content/setting"
+                   data-hash="#/admin/load-content/setting">
                     <span class="menu-icon">⚙️</span>
                     <span class="menu-text">系统设置</span>
                 </a>

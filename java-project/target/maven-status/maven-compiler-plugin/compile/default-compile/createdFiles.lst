@@ -16,7 +16,9 @@ plugin/team/coreserver/domain/Oauth2AuthorizationConsent.class
 plugin/team/coreserver/domain/Oauth2RegisteredClient.class
 plugin/team/coreserver/repository/Oauth2AuthorizationCodeRepository.class
 plugin/team/coreserver/repository/Oauth2AuthorizationRepository.class
+plugin/team/coreserver/interceptor/HtmxResponseInterceptor.class
 plugin/team/coreserver/ContinueApplication.class
 plugin/team/coreserver/domain/SysUser.class
 plugin/team/coreserver/domain/SysRolePermission.class
 plugin/team/coreserver/repository/Oauth2RegisteredClientRepository.class
+plugin/team/coreserver/oauth2/repository/JpaOAuth2AuthorizationService$1.class

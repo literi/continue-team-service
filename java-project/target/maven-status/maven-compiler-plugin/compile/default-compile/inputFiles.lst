@@ -1,7 +1,12 @@
 /home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/ContinueApplication.java
+/home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/config/OAuth2AuthorizationServerConfig.java
+/home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/config/OAuth2ResourceServerConfig.java
 /home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/config/Oauth2SecurityConfig.java
+/home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/config/WebMvcConfig.java
+/home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/controller/BaseController.java
 /home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/controller/HtmxController.java
 /home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/controller/LoginController.java
+/home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/controller/Oauth2ClientController.java
 /home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/controller/SysPermissionController.java
 /home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/controller/SysRoleController.java
 /home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/controller/SysTenantController.java
@@ -18,6 +23,11 @@
 /home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/domain/SysUserRole.java
 /home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/dto/PageResult.java
 /home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/dto/SysUserDTO.java
+/home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/interceptor/HtmxRedirectInterceptor.java
+/home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/interceptor/HtmxResponseInterceptor.java
+/home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/oauth2/repository/JpaOAuth2AuthorizationConsentService.java
+/home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/oauth2/repository/JpaOAuth2AuthorizationService.java
+/home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/oauth2/repository/JpaRegisteredClientRepository.java
 /home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/repository/Oauth2AuthorizationCodeRepository.java
 /home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/repository/Oauth2AuthorizationConsentRepository.java
 /home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/repository/Oauth2AuthorizationRepository.java
@@ -28,6 +38,7 @@
 /home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/repository/SysTenantRepository.java
 /home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/repository/SysUserRepository.java
 /home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/repository/SysUserRoleRepository.java
+/home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/service/Oauth2RegisteredClientService.java
 /home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/service/SysPermissionService.java
 /home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/service/SysRoleService.java
 /home/wang/continue-team-service/java-project/src/main/java/plugin/team/coreserver/service/SysTenantService.java

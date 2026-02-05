@@ -33,7 +33,7 @@
         <div class="form-group">
             <label>过期时间</label>
             <input type="datetime-local" name="expireTime" 
-                   th:value="${tenant?.expireTime != null ? #temporals.format(tenant.expireTime, 'yyyy-MM-dd\'T\'HH:mm') : ''}" />
+                   th:value="${tenant?.expireTime != null ? #strings.concat(#temporals.format(tenant.expireTime, 'yyyy-MM-dd'), 'T', #temporals.format(tenant.expireTime, 'HH:mm')) : ''}" />
         </div>
 
         <div class="form-actions">
